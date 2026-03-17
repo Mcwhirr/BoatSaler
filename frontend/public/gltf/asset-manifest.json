@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "generatedAt": "2026-03-17T05:08:43.758Z",
+  "source": {
+    "assetRoot": "../gltf",
+    "publicRoot": "public/gltf"
+  },
+  "primaryModelId": "TwoLayerBoat",
+  "models": [
+    {
+      "id": "TwoLayerBoat",
+      "label": "TwoLayerBoat",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/TwoLayerBoat/TwoLayerBoat.fbx"
+      },
+      "defaultUvSetId": "1",
+      "uvSets": [
+        {
+          "id": "1",
+          "label": "UV 1",
+          "directory": "/gltf/TwoLayerBoat/1",
+          "materialNameHint": "M_01___Default",
+          "textures": {
+            "baseColor": "/gltf/TwoLayerBoat/1/1_01 - Default_BaseColor.png",
+            "emissive": "/gltf/TwoLayerBoat/1/1_01 - Default_Emissive.png",
+            "normal": "/gltf/TwoLayerBoat/1/1_01 - Default_Normal.png",
+            "ao": "/gltf/TwoLayerBoat/1/AO.png",
+            "metalness": "/gltf/TwoLayerBoat/1/meti.png",
+            "roughness": "/gltf/TwoLayerBoat/1/rou.png"
+          }
+        },
+        {
+          "id": "2",
+          "label": "UV 2",
+          "directory": "/gltf/TwoLayerBoat/2",
+          "materialNameHint": "M_02___Default",
+          "textures": {
+            "baseColor": "/gltf/TwoLayerBoat/2/1_02 - Default_BaseColor.png",
+            "normal": "/gltf/TwoLayerBoat/2/1_02 - Default_Normal.png",
+            "ao": "/gltf/TwoLayerBoat/2/AO_3.png",
+            "metalness": "/gltf/TwoLayerBoat/2/meti_1.png",
+            "roughness": "/gltf/TwoLayerBoat/2/rou_2.png"
+          }
+        }
+      ]
+    }
+  ]
+}
