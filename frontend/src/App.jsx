@@ -6,7 +6,7 @@ const hardcodedModel = {
   label: 'TwoLayerBoat',
   model: {
     format: 'glb',
-    path: '/gltf/TwoLayerBoat/TwoLayerBoat.glb'
+    path: `${import.meta.env.BASE_URL}gltf/TwoLayerBoat/TwoLayerBoat.glb`
   },
   defaultUvSetId: null,
   uvSets: []

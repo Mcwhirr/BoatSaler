@@ -16,6 +16,8 @@ function updateOrthographicFrustum(camera, aspect, frustumHeight) {
 }
 
 export default function ShipScene() {
+  const assetBaseUrl = import.meta.env.BASE_URL
+  const resolveAssetPath = (relativePath) => `${assetBaseUrl}${relativePath}`
   const canvasRef = useRef(null)
   const controlsRef = useRef(null)
   const cameraRef = useRef(null)
@@ -248,7 +250,7 @@ export default function ShipScene() {
     }
 
     gltfLoader.load(
-      '/gltf/TwoLayerBoat/TwoLayerBoat.glb',
+      resolveAssetPath('gltf/TwoLayerBoat/TwoLayerBoat.glb'),
       async (gltf) => {
         const object3d = gltf.scene ?? gltf.scenes?.[0]
         if (!object3d) {
@@ -258,15 +260,15 @@ export default function ShipScene() {
 
         try {
           const [emissive, normal, ao, metalness, roughness, normal2, ao2, metalness2, roughness2] = await Promise.all([
-            loadTextureAsync('/gltf/TwoLayerBoat/1/1_01 - Default_Emissive.png'),
-            loadTextureAsync('/gltf/TwoLayerBoat/1/1_01 - Default_Normal.png'),
-            loadTextureAsync('/gltf/TwoLayerBoat/1/AO.png'),
-            loadTextureAsync('/gltf/TwoLayerBoat/1/meti.png'),
-            loadTextureAsync('/gltf/TwoLayerBoat/1/rou.png'),
-            loadTextureAsync('/gltf/TwoLayerBoat/2/1_02 - Default_Normal.png'),
-            loadTextureAsync('/gltf/TwoLayerBoat/2/AO_3.png'),
-            loadTextureAsync('/gltf/TwoLayerBoat/2/meti_1.png'),
-            loadTextureAsync('/gltf/TwoLayerBoat/2/rou_2.png')
+            loadTextureAsync(resolveAssetPath('gltf/TwoLayerBoat/1/1_01 - Default_Emissive.png')),
+            loadTextureAsync(resolveAssetPath('gltf/TwoLayerBoat/1/1_01 - Default_Normal.png')),
+            loadTextureAsync(resolveAssetPath('gltf/TwoLayerBoat/1/AO.png')),
+            loadTextureAsync(resolveAssetPath('gltf/TwoLayerBoat/1/meti.png')),
+            loadTextureAsync(resolveAssetPath('gltf/TwoLayerBoat/1/rou.png')),
+            loadTextureAsync(resolveAssetPath('gltf/TwoLayerBoat/2/1_02 - Default_Normal.png')),
+            loadTextureAsync(resolveAssetPath('gltf/TwoLayerBoat/2/AO_3.png')),
+            loadTextureAsync(resolveAssetPath('gltf/TwoLayerBoat/2/meti_1.png')),
+            loadTextureAsync(resolveAssetPath('gltf/TwoLayerBoat/2/rou_2.png'))
           ])
 
           emissive.flipY = false
