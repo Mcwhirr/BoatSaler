@@ -42,13 +42,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          DEPLOY_DIR="$(mktemp -d)"
+          cp -r frontend/dist/. "$DEPLOY_DIR"
+          touch "$DEPLOY_DIR/.nojekyll"
+
+          cd "$DEPLOY_DIR"
+          git init
+          git checkout -b gh-pages
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin
-          git switch --orphan gh-pages-temp
-          git rm -rf .
-          cp -r frontend/dist/. .
-          touch .nojekyll
           git add .
           git commit -m "deploy: update gh-pages"
-          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" gh-pages-temp:gh-pages
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git" gh-pages:gh-pages
