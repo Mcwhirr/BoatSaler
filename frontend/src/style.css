@@ -291,6 +291,37 @@ body {
   text-align: center;
 }
 
+.scene-model-actions {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.7rem;
+}
+
+.model-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #5f6670;
+  font-size: 0.88rem;
+}
+
+.model-select {
+  appearance: none;
+  border: 1px solid #d4d7dd;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #24262b;
+  font-size: 0.88rem;
+  padding: 0.45rem 2rem 0.45rem 0.9rem;
+  line-height: 1.2;
+}
+
+.model-select:focus {
+  outline: none;
+  border-color: #4b5563;
+  box-shadow: 0 0 0 2px rgba(75, 85, 99, 0.15);
+}
+
 .data-band {
   margin-top: 1.15rem;
   display: grid;

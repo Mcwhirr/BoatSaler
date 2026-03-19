@@ -1,16 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import ShipScene from './ShipScene'
 
-const hardcodedModel = {
-  id: 'TwoLayerBoat',
-  label: 'TwoLayerBoat',
-  model: {
-    format: 'glb',
-    path: `${import.meta.env.BASE_URL}gltf/TwoLayerBoat/TwoLayerBoat.glb`
-  },
-  defaultUvSetId: null,
-  uvSets: []
-}
+const MODEL_STORAGE_KEY = 'salesboat.selected-model-id'
 
 // 下方内容流展示的产品亮点数据。
 const highlights = [
@@ -23,8 +14,10 @@ export default function App() {
   // 页面滚动后，控制吸顶导航样式状态。
   const [isScrolled, setIsScrolled] = useState(false)
   const [activeMenu, setActiveMenu] = useState(null)
+  const [modelManifest, setModelManifest] = useState(null)
+  const [selectedModelId, setSelectedModelId] = useState('')
   const closeTimerRef = useRef(null)
-  const primaryModel = hardcodedModel
+  const primaryModel = modelManifest?.models?.find((model) => model.id === selectedModelId) ?? null
 
   const clearCloseTimer = () => {
     if (closeTimerRef.current) {
@@ -60,6 +53,50 @@ export default function App() {
       clearCloseTimer()
     }
   }, [])
+
+  useEffect(() => {
+    let isCancelled = false
+
+    const loadManifest = async () => {
+      try {
+        const manifestUrl = `${import.meta.env.BASE_URL}gltf/asset-manifest.json`
+        const response = await fetch(manifestUrl, { cache: 'no-store' })
+        if (!response.ok) {
+          throw new Error(`Failed to fetch asset-manifest.json: ${response.status}`)
+        }
+
+        const manifest = await response.json()
+        if (isCancelled) {
+          return
+        }
+
+        setModelManifest(manifest)
+
+        const availableIds = new Set((manifest.models ?? []).map((model) => model.id))
+        const storedModelId = window.localStorage.getItem(MODEL_STORAGE_KEY)
+        const defaultModelId = manifest.primaryModelId ?? manifest.models?.[0]?.id ?? ''
+        const initialModelId = storedModelId && availableIds.has(storedModelId)
+          ? storedModelId
+          : defaultModelId
+
+        setSelectedModelId(initialModelId)
+      } catch (error) {
+        console.error('Failed to load model manifest:', error)
+      }
+    }
+
+    loadManifest()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [])
+
+  const handleModelChange = (event) => {
+    const modelId = event.target.value
+    setSelectedModelId(modelId)
+    window.localStorage.setItem(MODEL_STORAGE_KEY, modelId)
+  }
 
   return (
     <div className="page">
@@ -118,8 +155,20 @@ export default function App() {
         <p className="scene-label">
           {primaryModel ? `${primaryModel.label} · 3D 预览` : '旗舰船型 · 3D 预览'}
         </p>
+        <div className="scene-model-actions">
+          <label className="model-select-wrap" htmlFor="model-select">
+            <span>船型</span>
+            <select id="model-select" className="model-select" value={selectedModelId} onChange={handleModelChange}>
+              {(modelManifest?.models ?? []).map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         <div className="scene-layout">
-          <ShipScene />
+          <ShipScene modelConfig={primaryModel} />
         </div>
       </section>
 

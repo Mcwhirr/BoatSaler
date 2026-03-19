@@ -1,12 +1,36 @@
 {
   "version": 1,
-  "generatedAt": "2026-03-17T10:03:37.992Z",
+  "generatedAt": "2026-03-19T15:48:08.401Z",
   "source": {
     "assetRoot": "../gltf",
     "publicRoot": "public/gltf"
   },
-  "primaryModelId": "TwoLayerBoat",
+  "primaryModelId": "PleasureBoat",
   "models": [
+    {
+      "id": "PleasureBoat",
+      "label": "PleasureBoat",
+      "model": {
+        "format": "glb",
+        "path": "/gltf/PleasureBoat/PleasureBoat.glb"
+      },
+      "defaultUvSetId": "tietu",
+      "uvSets": [
+        {
+          "id": "tietu",
+          "label": "UV tietu",
+          "directory": "/gltf/PleasureBoat/tietu",
+          "materialNameHint": "M_01___Default",
+          "textures": {
+            "baseColor": "/gltf/PleasureBoat/tietu/316-2_01 - Default_BaseColor.png",
+            "emissive": "/gltf/PleasureBoat/tietu/316-2_01 - Default_Emissive.png",
+            "normal": "/gltf/PleasureBoat/tietu/316-2_01 - Default_Normal.png",
+            "ao": "/gltf/PleasureBoat/tietu/ao.png",
+            "roughness": "/gltf/PleasureBoat/tietu/rou.png"
+          }
+        }
+      ]
+    },
     {
       "id": "TwoLayerBoat",
       "label": "TwoLayerBoat",
