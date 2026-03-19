@@ -177,13 +177,14 @@ export default function ShipScene({ modelConfig }) {
 
     setViewPresetRef.current = (mode, deck = interiorDeckRef.current) => {
       modeRef.current = mode
+      const effectiveDeck = isTwoLayerBoat ? deck : '1'
 
       if (mode === 'interior') {
         activeCamera = interiorCamera
         cameraRef.current = interiorCamera
         controls.enabled = false
 
-        const preset = interiorDeckPresets[deck] ?? interiorDeckPresets['1']
+        const preset = interiorDeckPresets[effectiveDeck] ?? interiorDeckPresets['1']
         interiorPose.position.copy(preset.position)
         interiorPose.yaw = preset.yaw
         interiorPose.pitch = preset.pitch
@@ -465,6 +466,20 @@ export default function ShipScene({ modelConfig }) {
       })
     }
 
+    const applyTestModelOverrides = (rootObject) => {
+      rootObject.traverse((child) => {
+        if (!child.isMesh || !child.material) {
+          return
+        }
+
+        const materials = Array.isArray(child.material) ? child.material : [child.material]
+        materials.forEach((material) => {
+          material.side = THREE.DoubleSide
+          material.needsUpdate = true
+        })
+      })
+    }
+
     loadModelAsync()
       .then(async (object3d) => {
         loadedRoot = object3d
@@ -476,6 +491,8 @@ export default function ShipScene({ modelConfig }) {
             console.error('Failed to load fixed texture maps for TwoLayerBoat:', error)
           }
           applyTwoLayerOverrides(object3d)
+        } else if (modelId === 'TestModel') {
+          applyTestModelOverrides(object3d)
         } else if (uvSets.length > 0) {
           try {
             await loadAndApplyUvMaps(object3d)
@@ -588,7 +605,7 @@ export default function ShipScene({ modelConfig }) {
           >
             内部
           </button>
-          {activeView === 'interior' && (
+          {isTwoLayerBoat && activeView === 'interior' && (
             <div className="interior-level-toggle" aria-label="内部楼层切换">
               <button
                 type="button"

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-03-19T15:48:08.401Z",
+  "generatedAt": "2026-03-19T16:04:10.921Z",
   "source": {
     "assetRoot": "../gltf",
     "publicRoot": "public/gltf"
@@ -30,6 +30,16 @@
           }
         }
       ]
+    },
+    {
+      "id": "TestModel",
+      "label": "TestModel",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/TestModel/ddd.fbx"
+      },
+      "defaultUvSetId": null,
+      "uvSets": []
     },
     {
       "id": "TwoLayerBoat",

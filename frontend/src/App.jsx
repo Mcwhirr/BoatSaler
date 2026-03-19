@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import ShipScene from './ShipScene'
 
 const MODEL_STORAGE_KEY = 'salesboat.selected-model-id'
+const BROCHURE_FILE_NAME = '2026京穗船舶产品宣传册.pdf'
 
 // 下方内容流展示的产品亮点数据。
 const highlights = [
@@ -18,6 +19,7 @@ export default function App() {
   const [selectedModelId, setSelectedModelId] = useState('')
   const closeTimerRef = useRef(null)
   const primaryModel = modelManifest?.models?.find((model) => model.id === selectedModelId) ?? null
+  const brochurePath = `${import.meta.env.BASE_URL}pdf/${encodeURIComponent(BROCHURE_FILE_NAME)}`
 
   const clearCloseTimer = () => {
     if (closeTimerRef.current) {
@@ -98,6 +100,18 @@ export default function App() {
     window.localStorage.setItem(MODEL_STORAGE_KEY, modelId)
   }
 
+  const getModelDisplayLabel = (model) => {
+    if (!model) {
+      return ''
+    }
+
+    if (model.id === 'TestModel') {
+      return 'test船型'
+    }
+
+    return model.label
+  }
+
   return (
     <div className="page">
       {/* 顶部导航，包含“配置”的二级菜单。 */}
@@ -145,7 +159,7 @@ export default function App() {
           </p>
           <div className="hero-actions reveal reveal-4">
             <button className="btn primary">立即预约看船</button>
-            <button className="btn ghost">获取产品手册</button>
+            <a className="btn ghost" href={brochurePath} download={BROCHURE_FILE_NAME}>获取产品手册</a>
           </div>
         </div>
       </section>
@@ -153,7 +167,7 @@ export default function App() {
       {/* 中央 3D 展示区与外观/内部切换。 */}
       <section className="scene-center" aria-label="三维船舶展示">
         <p className="scene-label">
-          {primaryModel ? `${primaryModel.label} · 3D 预览` : '旗舰船型 · 3D 预览'}
+          {primaryModel ? `${getModelDisplayLabel(primaryModel)} · 3D 预览` : '旗舰船型 · 3D 预览'}
         </p>
         <div className="scene-model-actions">
           <label className="model-select-wrap" htmlFor="model-select">
@@ -161,7 +175,7 @@ export default function App() {
             <select id="model-select" className="model-select" value={selectedModelId} onChange={handleModelChange}>
               {(modelManifest?.models ?? []).map((model) => (
                 <option key={model.id} value={model.id}>
-                  {model.label}
+                  {getModelDisplayLabel(model)}
                 </option>
               ))}
             </select>
