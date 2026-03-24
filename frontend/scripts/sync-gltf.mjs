@@ -31,8 +31,21 @@ const allowedExtensions = new Set([
 ])
 
 const modelExtensions = ['.glb', '.gltf', '.fbx', '.obj']
-const preferredModelFileNames = ['1.fbx', '2.fbx']
-const modelExtensionPriority = ['.fbx', '.glb', '.gltf', '.obj']
+const preferredModelFileNames = ['1.glb', '1.fbx', '2.glb', '2.fbx']
+const modelExtensionPriority = ['.glb', '.gltf', '.fbx', '.obj']
+const preferredPrimaryModelId = 'PleasureBoat1'
+
+const getPreferredModelFileNames = (modelId) => {
+  if (modelId === 'Yacht') {
+    return ['950.fbx', '950.glb', ...preferredModelFileNames].map((fileName) => fileName.toLowerCase())
+  }
+
+  if (modelId === 'PleasureBoat1') {
+    return ['11.fbx', '11.glb', ...preferredModelFileNames].map((fileName) => fileName.toLowerCase())
+  }
+
+  return preferredModelFileNames.map((fileName) => fileName.toLowerCase())
+}
 
 if (!fs.existsSync(sourceDir)) {
   console.warn(`[sync:gltf] Source directory not found: ${sourceDir}`)
@@ -71,7 +84,7 @@ const classifyTexture = (fileName) => {
     return 'roughness'
   }
 
-  if (normalizedName.includes('metalness') || normalizedName.startsWith('meti')) {
+  if (normalizedName.includes('metallic') || normalizedName.includes('metalness') || normalizedName.startsWith('meti')) {
     return 'metalness'
   }
 
@@ -137,10 +150,11 @@ const buildModelManifest = () => {
     const modelFileEntry = modelFileCandidates
       .slice()
       .sort((left, right) => {
+        const localPreferredModelFileNames = getPreferredModelFileNames(entry.name)
         const leftName = left.name.toLowerCase()
         const rightName = right.name.toLowerCase()
-        const leftPreferredIndex = preferredModelFileNames.indexOf(leftName)
-        const rightPreferredIndex = preferredModelFileNames.indexOf(rightName)
+        const leftPreferredIndex = localPreferredModelFileNames.indexOf(leftName)
+        const rightPreferredIndex = localPreferredModelFileNames.indexOf(rightName)
 
         if (leftPreferredIndex !== rightPreferredIndex) {
           if (leftPreferredIndex === -1) {
@@ -226,7 +240,7 @@ const buildModelManifest = () => {
       assetRoot: toPosixPath(path.relative(frontendDir, sourceDir)),
       publicRoot: 'public/gltf'
     },
-    primaryModelId: models[0]?.id ?? null,
+    primaryModelId: models.find((model) => model.id === preferredPrimaryModelId)?.id ?? models[0]?.id ?? null,
     models
   }
 }

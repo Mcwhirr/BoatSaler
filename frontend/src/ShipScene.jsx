@@ -16,6 +16,108 @@ function updateOrthographicFrustum(camera, aspect, frustumHeight) {
   camera.bottom = -halfHeight
 }
 
+function normalizeMaterialName(value) {
+  if (!value) {
+    return ''
+  }
+
+  return value
+    .toLowerCase()
+    .replace(/^m[_\s-]*/, '')
+    .replace(/[^a-z0-9]+/g, '')
+}
+
+const WATER_SURFACE_ENABLED = true
+const EXTERIOR_STAGE_Y_OFFSET = 0.42
+const EXTERIOR_TARGET_Y = 0.5 + EXTERIOR_STAGE_Y_OFFSET * 0.35
+const DEFAULT_WATER_TUNING = {
+  levelFactor: 0.18,
+  radiusScale: 0.84,
+  zOffset: 0.16,
+  exteriorModelLiftY: 0
+}
+const MODEL_WATER_TUNING = {
+  PleasureBoat: {
+    levelFactor: 0.06,
+    exteriorModelLiftY: -0.02
+  },
+  PleasureBoat1: {
+    exteriorModelLiftY: 0.1
+  },
+  Yacht: {
+    exteriorModelLiftY: 0.06
+  }
+}
+
+function getWaterTuning(modelId) {
+  return {
+    ...DEFAULT_WATER_TUNING,
+    ...(MODEL_WATER_TUNING[modelId] ?? {})
+  }
+}
+
+function createWaterSurface() {
+  const geometry = new THREE.CircleGeometry(1, 120)
+  const material = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    uniforms: {
+      uTime: { value: 0 },
+      uBaseColor: { value: new THREE.Color('#72b8e9') },
+      uDeepColor: { value: new THREE.Color('#0d3b61') },
+      uHighlightColor: { value: new THREE.Color('#f2fbff') }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      varying float vWave;
+
+      uniform float uTime;
+
+      void main() {
+        vUv = uv;
+
+        vec3 transformed = position;
+        float primaryWave = sin((position.x * 10.0) + uTime * 1.35) * 0.018;
+        float secondaryWave = cos((position.y * 13.0) - uTime * 1.05) * 0.014;
+        transformed.z += primaryWave + secondaryWave;
+        vWave = transformed.z;
+
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec2 vUv;
+      varying float vWave;
+
+      uniform float uTime;
+      uniform vec3 uBaseColor;
+      uniform vec3 uDeepColor;
+      uniform vec3 uHighlightColor;
+
+      void main() {
+        float dist = distance(vUv, vec2(0.5));
+        float surfaceMask = smoothstep(0.56, 0.08, dist);
+        float shimmer = 0.5 + 0.5 * sin((vUv.x + vUv.y) * 24.0 + uTime * 0.9 + vWave * 40.0);
+        float edgeGlow = smoothstep(0.55, 0.24, dist);
+        float innerShadow = smoothstep(0.0, 0.44, dist);
+
+        vec3 color = mix(uDeepColor, uBaseColor, 0.62 + vWave * 7.5);
+        color = mix(color, uDeepColor * 0.9, innerShadow * 0.18);
+        color = mix(color, uHighlightColor, shimmer * 0.14 * edgeGlow);
+
+        float alpha = surfaceMask * (0.26 + shimmer * 0.12 + edgeGlow * 0.18);
+        gl_FragColor = vec4(color, alpha);
+      }
+    `
+  })
+
+  const mesh = new THREE.Mesh(geometry, material)
+  mesh.rotation.x = -Math.PI / 2
+  mesh.position.set(0, -0.8, 0.2)
+
+  return { mesh, material, geometry }
+}
+
 export default function ShipScene({ modelConfig }) {
   const assetBaseUrl = import.meta.env.BASE_URL
   const resolveAssetPath = (relativePath) => `${assetBaseUrl}${relativePath}`
@@ -36,6 +138,7 @@ export default function ShipScene({ modelConfig }) {
   }
 
   const modelId = modelConfig?.id ?? 'TwoLayerBoat'
+  const waterTuning = getWaterTuning(modelId)
   const modelFormat = (modelConfig?.model?.format ?? 'glb').toLowerCase()
   const modelPath = modelConfig?.model?.path
     ? resolveManifestPath(modelConfig.model.path)
@@ -66,6 +169,12 @@ export default function ShipScene({ modelConfig }) {
     }
 
     const scene = new THREE.Scene()
+    const presentationRoot = new THREE.Group()
+    const modelRoot = new THREE.Group()
+    const waterRoot = new THREE.Group()
+    const waterSurface = WATER_SURFACE_ENABLED ? createWaterSurface() : null
+    scene.add(presentationRoot)
+    presentationRoot.add(waterRoot, modelRoot)
 
     const exteriorCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.005, 5000)
     const interiorCamera = new THREE.PerspectiveCamera(56, 1, 0.005, 5000)
@@ -84,6 +193,10 @@ export default function ShipScene({ modelConfig }) {
     fillLight.position.set(-4.5, 4.2, -3.5)
     scene.add(ambientLight, keyLight, fillLight)
 
+    if (waterSurface) {
+      waterRoot.add(waterSurface.mesh)
+    }
+
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setClearAlpha(0)
@@ -99,7 +212,7 @@ export default function ShipScene({ modelConfig }) {
     controls.enableDamping = true
     controls.enablePan = false
     controls.enableZoom = false
-    controls.target.set(0, 0.5, 0)
+    controls.target.set(0, EXTERIOR_TARGET_Y, 0)
     controls.update()
     controlsRef.current = controls
 
@@ -175,9 +288,20 @@ export default function ShipScene({ modelConfig }) {
       }
     }
 
+    const updatePresentationOffset = (mode) => {
+      presentationRoot.position.y = mode === 'exterior' ? EXTERIOR_STAGE_Y_OFFSET : 0
+      modelRoot.position.y = mode === 'exterior' ? waterTuning.exteriorModelLiftY : 0
+    }
+
     setViewPresetRef.current = (mode, deck = interiorDeckRef.current) => {
       modeRef.current = mode
       const effectiveDeck = isTwoLayerBoat ? deck : '1'
+
+      updatePresentationOffset(mode)
+
+      if (waterSurface) {
+        waterSurface.mesh.visible = mode === 'exterior'
+      }
 
       if (mode === 'interior') {
         activeCamera = interiorCamera
@@ -195,7 +319,7 @@ export default function ShipScene({ modelConfig }) {
         controls.enabled = true
         exteriorCamera.position.set(-6.2, 1.65, 1.7)
         exteriorCamera.zoom = 1.18
-        controls.target.set(0, 0.5, 0)
+        controls.target.set(0, EXTERIOR_TARGET_Y, 0)
         exteriorCamera.updateProjectionMatrix()
         controls.update()
       }
@@ -237,34 +361,41 @@ export default function ShipScene({ modelConfig }) {
     const ensureAoUv = (mesh) => {
       const geometry = mesh.geometry
       if (!geometry?.attributes?.uv) {
-        return
+        return false
       }
 
       if (!geometry.attributes.uv2) {
         geometry.setAttribute('uv2', geometry.attributes.uv.clone())
       }
+
+      return true
     }
 
-    const applyMapsToMaterial = (material, maps) => {
-      if (maps.baseColor) {
+    const applyMapsToMaterial = (material, maps, options = {}) => {
+      const { canUseUvMaps = true } = options
+
+      if (maps.baseColor && canUseUvMaps) {
+        if (material.color) {
+          material.color.set('#ffffff')
+        }
         material.map = maps.baseColor
       }
-      if (maps.emissive) {
+      if (maps.emissive && canUseUvMaps) {
         material.emissive = new THREE.Color('#ffffff')
         material.emissiveMap = maps.emissive
       }
-      if (maps.normal) {
+      if (maps.normal && canUseUvMaps) {
         material.normalMap = maps.normal
         material.normalScale = new THREE.Vector2(1, -1)
       }
-      if (maps.ao) {
+      if (maps.ao && canUseUvMaps) {
         material.aoMap = maps.ao
       }
-      if (maps.metalness) {
+      if (maps.metalness && canUseUvMaps) {
         material.metalnessMap = maps.metalness
         material.metalness = 1
       }
-      if (maps.roughness) {
+      if (maps.roughness && canUseUvMaps) {
         material.roughnessMap = maps.roughness
         material.roughness = 1
       }
@@ -273,26 +404,35 @@ export default function ShipScene({ modelConfig }) {
 
     const applyUvSetMaps = (rootObject, uvSet, maps) => {
       const hint = uvSet.materialNameHint
+      const normalizedHint = normalizeMaterialName(hint)
       let appliedCount = 0
+      let skippedMeshCount = 0
 
       rootObject.traverse((child) => {
         if (!child.isMesh || !child.material) {
           return
         }
 
-        ensureAoUv(child)
+        const hasUv = ensureAoUv(child)
         const materials = Array.isArray(child.material) ? child.material : [child.material]
         materials.forEach((material) => {
-          if (hint && material?.name !== hint) {
+          const normalizedMaterialName = normalizeMaterialName(material?.name)
+          if (hint && normalizedMaterialName !== normalizedHint) {
             return
           }
 
-          applyMapsToMaterial(material, maps)
+          if (!hasUv) {
+            skippedMeshCount += 1
+            applyMapsToMaterial(material, maps, { canUseUvMaps: false })
+            return
+          }
+
+          applyMapsToMaterial(material, maps, { canUseUvMaps: true })
           appliedCount += 1
         })
       })
 
-      return appliedCount
+      return { appliedCount, skippedMeshCount }
     }
 
     const applyTwoLayerMaterialMaps = (rootObject, materialName, maps, withEmissive) => {
@@ -370,6 +510,8 @@ export default function ShipScene({ modelConfig }) {
     // ===== TwoLayerBoat Locked Block END =====
 
     const loadAndApplyUvMaps = async (rootObject) => {
+      const shouldFlipY = effectiveModelFormat !== 'fbx'
+
       for (const uvSet of uvSets) {
         const textureEntries = Object.entries(uvSet.textures ?? {}).filter(([, path]) => Boolean(path))
         if (textureEntries.length === 0) {
@@ -379,20 +521,26 @@ export default function ShipScene({ modelConfig }) {
         const loadedTextures = await Promise.all(
           textureEntries.map(async ([type, path]) => {
             const texture = await loadTextureAsync(resolveManifestPath(path))
-            texture.flipY = false
+            texture.flipY = shouldFlipY ? false : true
             if (type === 'baseColor' || type === 'emissive') {
               texture.colorSpace = THREE.SRGBColorSpace
             }
+            texture.needsUpdate = true
             externalTextures.push(texture)
             return [type, texture]
           })
         )
 
         const textureMap = Object.fromEntries(loadedTextures)
-        const appliedCount = applyUvSetMaps(rootObject, uvSet, textureMap)
-        if (appliedCount === 0) {
+        const initialResult = applyUvSetMaps(rootObject, uvSet, textureMap)
+        if (initialResult.appliedCount === 0) {
           // 当材质名提示未命中时，回退为整模型应用，避免贴图完全不生效。
-          applyUvSetMaps(rootObject, { ...uvSet, materialNameHint: null }, textureMap)
+          const fallbackResult = applyUvSetMaps(rootObject, { ...uvSet, materialNameHint: null }, textureMap)
+          if (fallbackResult.appliedCount === 0 && fallbackResult.skippedMeshCount > 0) {
+            console.warn(`Skipped UV texture application for ${modelId}/${uvSet.id}: model meshes do not contain UV coordinates.`)
+          }
+        } else if (initialResult.skippedMeshCount > 0) {
+          console.warn(`Partially skipped UV texture application for ${modelId}/${uvSet.id}: some meshes do not contain UV coordinates.`)
         }
       }
     }
@@ -512,7 +660,17 @@ export default function ShipScene({ modelConfig }) {
         const center = bounds.getCenter(new THREE.Vector3())
         object3d.position.sub(center)
 
-        scene.add(object3d)
+        bounds.setFromObject(object3d)
+        const centeredBounds = bounds.clone()
+        const normalizedSize = centeredBounds.getSize(new THREE.Vector3())
+        if (waterSurface) {
+          const waterRadius = Math.max(Math.max(normalizedSize.x, normalizedSize.z) * waterTuning.radiusScale, 3.4)
+          const waterLevel = centeredBounds.min.y + normalizedSize.y * waterTuning.levelFactor
+          waterSurface.mesh.scale.setScalar(waterRadius)
+          waterSurface.mesh.position.set(0, waterLevel, waterTuning.zOffset)
+        }
+
+        modelRoot.add(object3d)
       })
       .catch((error) => {
         console.error(`Failed to load ${modelId}:`, error)
@@ -535,6 +693,9 @@ export default function ShipScene({ modelConfig }) {
 
     let frameId = 0
     const renderLoop = () => {
+      if (waterSurface) {
+        waterSurface.material.uniforms.uTime.value = performance.now() * 0.001
+      }
       if (modeRef.current === 'exterior') {
         controls.update()
       }
@@ -553,7 +714,7 @@ export default function ShipScene({ modelConfig }) {
       window.removeEventListener('pointercancel', onPointerUp)
 
       if (loadedRoot) {
-        scene.remove(loadedRoot)
+        modelRoot.remove(loadedRoot)
         loadedRoot.traverse((child) => {
           if (!child.isMesh) {
             return
@@ -574,6 +735,12 @@ export default function ShipScene({ modelConfig }) {
       externalTextures.forEach((texture) => texture?.dispose())
       controlsRef.current = null
       cameraRef.current = null
+
+      if (waterSurface) {
+        waterRoot.remove(waterSurface.mesh)
+        waterSurface.geometry.dispose()
+        waterSurface.material.dispose()
+      }
 
       renderer.dispose()
     }

@@ -1,50 +1,60 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import ShipScene from './ShipScene'
 
+const PREFERRED_MODEL_ID = 'PleasureBoat1'
 const MODEL_STORAGE_KEY = 'salesboat.selected-model-id'
+const HERO_IMAGE_FILE_NAME = 'FrontPage.png'
 const BROCHURE_FILE_NAME = '2026京穗船舶产品宣传册.pdf'
 
-// 下方内容流展示的产品亮点数据。
-const highlights = [
-  { title: '3D 船型演示', text: '在销售阶段直观展示船体外观、参数和配置差异，提升客户决策效率。' },
-  { title: '配置化报价', text: '按船型、动力系统与交付周期快速生成报价方案，支持销售一键输出。' },
-  { title: '交付全流程可视', text: '从签约到交付，全链路节点可追踪，让售前承诺落地更可控。' }
+const detailCards = [
+  {
+    eyebrow: 'Product Positioning',
+    title: '面向销售演示的船艇数字封面',
+    text: '第一页保留宣传册封面与一句 Slogan，让客户先建立品牌印象，再进入模型演示，避免一开始就被复杂信息打断。'
+  },
+  {
+    eyebrow: 'Interactive Review',
+    title: '全屏 3D 进入产品讲解模式',
+    text: '第二页直接切入整屏模型展示，便于在会议室、大屏或 iPad 上进行外观讲解、角度切换和船型切换。'
+  },
+  {
+    eyebrow: 'Asset Strategy',
+    title: '按 UV 可用性选择更稳定的模型格式',
+    text: '当前资源链路会优先使用更适合贴图映射的模型文件，减少黑模、错贴图和材质命名不一致带来的演示风险。'
+  },
+  {
+    eyebrow: 'Sales Workflow',
+    title: '从宣传册到配置沟通形成连续体验',
+    text: '销售可以先用封面建立信任，再进入模型讲解，随后在第三页继续承接配置亮点、交付说明和后续方案介绍。'
+  }
 ]
 
+function getModelDisplayLabel(model) {
+  if (!model) {
+    return ''
+  }
+
+  if (model.id === 'TestModel') {
+    return 'Test Model'
+  }
+
+  return model.label
+}
+
 export default function App() {
-  // 页面滚动后，控制吸顶导航样式状态。
   const [isScrolled, setIsScrolled] = useState(false)
-  const [activeMenu, setActiveMenu] = useState(null)
   const [modelManifest, setModelManifest] = useState(null)
   const [selectedModelId, setSelectedModelId] = useState('')
-  const closeTimerRef = useRef(null)
-  const primaryModel = modelManifest?.models?.find((model) => model.id === selectedModelId) ?? null
+  const models = modelManifest?.models ?? []
+
+  const primaryModel = models.find((model) => model.id === selectedModelId) ?? null
+  const selectedModelLabel = getModelDisplayLabel(primaryModel) || (models.length ? 'Select Vessel' : 'Loading Vessels')
   const brochurePath = `${import.meta.env.BASE_URL}pdf/${encodeURIComponent(BROCHURE_FILE_NAME)}`
-
-  const clearCloseTimer = () => {
-    if (closeTimerRef.current) {
-      window.clearTimeout(closeTimerRef.current)
-      closeTimerRef.current = null
-    }
-  }
-
-  const openMenu = (menuKey) => {
-    clearCloseTimer()
-    setActiveMenu(menuKey)
-  }
-
-  const closeMenuWithDelay = (menuKey) => {
-    clearCloseTimer()
-    closeTimerRef.current = window.setTimeout(() => {
-      setActiveMenu((current) => (current === menuKey ? null : current))
-      closeTimerRef.current = null
-    }, 1000)
-  }
+  const heroImagePath = `${import.meta.env.BASE_URL}pdf/${encodeURIComponent(HERO_IMAGE_FILE_NAME)}`
 
   useEffect(() => {
-    // 让导航的视觉状态与滚动位置保持同步。
     const onScroll = () => {
-      setIsScrolled(window.scrollY > 16)
+      setIsScrolled(window.scrollY > 12)
     }
 
     onScroll()
@@ -52,7 +62,6 @@ export default function App() {
 
     return () => {
       window.removeEventListener('scroll', onScroll)
-      clearCloseTimer()
     }
   }, [])
 
@@ -63,6 +72,7 @@ export default function App() {
       try {
         const manifestUrl = `${import.meta.env.BASE_URL}gltf/asset-manifest.json`
         const response = await fetch(manifestUrl, { cache: 'no-store' })
+
         if (!response.ok) {
           throw new Error(`Failed to fetch asset-manifest.json: ${response.status}`)
         }
@@ -76,12 +86,19 @@ export default function App() {
 
         const availableIds = new Set((manifest.models ?? []).map((model) => model.id))
         const storedModelId = window.localStorage.getItem(MODEL_STORAGE_KEY)
+        const forcedModelId = availableIds.has(PREFERRED_MODEL_ID) ? PREFERRED_MODEL_ID : ''
         const defaultModelId = manifest.primaryModelId ?? manifest.models?.[0]?.id ?? ''
-        const initialModelId = storedModelId && availableIds.has(storedModelId)
-          ? storedModelId
-          : defaultModelId
+        const initialModelId = forcedModelId || (
+          storedModelId && availableIds.has(storedModelId)
+            ? storedModelId
+            : defaultModelId
+        )
 
         setSelectedModelId(initialModelId)
+
+        if (initialModelId) {
+          window.localStorage.setItem(MODEL_STORAGE_KEY, initialModelId)
+        }
       } catch (error) {
         console.error('Failed to load model manifest:', error)
       }
@@ -94,135 +111,108 @@ export default function App() {
     }
   }, [])
 
-  const handleModelChange = (event) => {
-    const modelId = event.target.value
+  const handleModelSelect = (modelId) => {
+    if (!modelId || modelId === selectedModelId) {
+      return
+    }
+
     setSelectedModelId(modelId)
     window.localStorage.setItem(MODEL_STORAGE_KEY, modelId)
   }
 
-  const getModelDisplayLabel = (model) => {
-    if (!model) {
-      return ''
-    }
-
-    if (model.id === 'TestModel') {
-      return 'test船型'
-    }
-
-    return model.label
-  }
-
   return (
     <div className="page">
-      {/* 顶部导航，包含“配置”的二级菜单。 */}
       <header className={`site-nav ${isScrolled ? 'is-scrolled' : ''}`}>
         <div className="site-nav-inner">
-          <p className="brand">SalesBoat</p>
-          <nav className="site-links" aria-label="主导航">
-            <div
-              className={`nav-item with-submenu ${activeMenu === 'ship' ? 'open' : ''}`}
-              onMouseEnter={() => openMenu('ship')}
-              onMouseLeave={() => closeMenuWithDelay('ship')}
-            >
-              <a href="#">船型</a>
-              <div className="submenu" role="menu" aria-label="船型子菜单">
-                <a href="#" role="menuitem">A 船型</a>
-                <a href="#" role="menuitem">B 船型</a>
-                <a href="#" role="menuitem">C 船型</a>
-              </div>
-            </div>
-            <div
-              className={`nav-item with-submenu ${activeMenu === 'config' ? 'open' : ''}`}
-              onMouseEnter={() => openMenu('config')}
-              onMouseLeave={() => closeMenuWithDelay('config')}
-            >
-              <a href="#">配置</a>
-              <div className="submenu" role="menu" aria-label="配置子菜单">
-                <a href="#" role="menuitem">动力系统</a>
-                <a href="#" role="menuitem">智能控制</a>
-              </div>
-            </div>
-            <a href="#">服务</a>
+          <a className="brand" href="#top">SalesBoat</a>
+          <nav className="site-links" aria-label="Primary navigation">
+            <a href="#poster">Poster</a>
+            <a href="#experience">3D View</a>
+            <a href="#details">Details</a>
           </nav>
-          <button className="mini-btn">咨询顾问</button>
+          <a className="mini-btn" href={brochurePath} download={BROCHURE_FILE_NAME}>Brochure</a>
         </div>
       </header>
 
-      {/* 首屏文案，使用分层淡入动画类。 */}
-      <section className="hero">
-        <div className="hero-copy">
-          <p className="kicker reveal reveal-1">智能卖船方案</p>
-          <h1 className="reveal reveal-2">把卖船这件事，做成一套可视化成交系统</h1>
-          <p className="subtitle reveal reveal-3">
-            从船型展示、配置讲解到报价与交付进度，
-            用一个移动端友好的页面完成高质感客户沟通。
-          </p>
-          <div className="hero-actions reveal reveal-4">
-            <button className="btn primary">立即预约看船</button>
-            <a className="btn ghost" href={brochurePath} download={BROCHURE_FILE_NAME}>获取产品手册</a>
-          </div>
-        </div>
-      </section>
+      <main className="page-main" id="top">
+        <section className="hero-screen" id="poster">
+          <img className="hero-poster" src={heroImagePath} alt="Jingsui brochure front page" />
+          <div className="hero-overlay" />
 
-      {/* 中央 3D 展示区与外观/内部切换。 */}
-      <section className="scene-center" aria-label="三维船舶展示">
-        <p className="scene-label">
-          {primaryModel ? `${getModelDisplayLabel(primaryModel)} · 3D 预览` : '旗舰船型 · 3D 预览'}
-        </p>
-        <div className="scene-model-actions">
-          <label className="model-select-wrap" htmlFor="model-select">
-            <span>船型</span>
-            <select id="model-select" className="model-select" value={selectedModelId} onChange={handleModelChange}>
-              {(modelManifest?.models ?? []).map((model) => (
-                <option key={model.id} value={model.id}>
-                  {getModelDisplayLabel(model)}
-                </option>
+          <div className="hero-content">
+            <p className="hero-kicker reveal reveal-1">JINGSUI SHIPBUILDING</p>
+            <h1 className="reveal reveal-2">重庆京穗船舶产品展示</h1>
+            <p className="hero-slogan reveal reveal-3">
+              One poster. One slogan. Then straight into a full-screen 3D review.
+            </p>
+            <div className="hero-actions reveal reveal-4">
+              <a className="btn primary" href="#experience">进入 3D 展示</a>
+            </div>
+          </div>
+
+          <a className="scroll-cue reveal reveal-4" href="#experience">
+            <span className="scroll-cue-line" />
+            <span>Scroll</span>
+          </a>
+        </section>
+
+        <section className="viewer-screen" id="experience">
+          <div className="viewer-canvas viewer-canvas-fullscreen">
+            <div className="viewer-canvas-toolbar">
+              <div className="viewer-selector-meta">
+                <p className="viewer-control-eyebrow">VESSEL LINEUP</p>
+                <p className="viewer-control-title">{selectedModelLabel}</p>
+                <p className="viewer-control-caption">Switch the live vessel directly from the canvas.</p>
+              </div>
+
+              <div className="viewer-selector-dock" role="toolbar" aria-label="Vessel selector">
+                {models.map((model) => {
+                  const isActive = model.id === selectedModelId
+
+                  return (
+                    <button
+                      key={model.id}
+                      type="button"
+                      className={`viewer-selector-chip ${isActive ? 'active' : ''}`}
+                      onClick={() => handleModelSelect(model.id)}
+                      aria-pressed={isActive}
+                    >
+                      <span className="viewer-selector-chip-label">{getModelDisplayLabel(model)}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <ShipScene modelConfig={primaryModel} />
+          </div>
+        </section>
+
+        <section className="detail-screen" id="details">
+          <div className="detail-screen-inner">
+            <div className="detail-header">
+              <p className="detail-kicker">DETAILED INTRODUCTION</p>
+              <h2>第三页开始承接更详细的介绍，让演示从视觉吸引过渡到业务说明。</h2>
+              <p>
+                这一页保留苹果式的留白和节奏，用更安静的卡片布局继续介绍产品价值、展示逻辑和销售使用场景。
+              </p>
+            </div>
+
+            <div className="detail-grid">
+              {detailCards.map((card) => (
+                <article key={card.title} className="detail-card">
+                  <p className="detail-card-eyebrow">{card.eyebrow}</p>
+                  <h3>{card.title}</h3>
+                  <p>{card.text}</p>
+                </article>
               ))}
-            </select>
-          </label>
-        </div>
-        <div className="scene-layout">
-          <ShipScene modelConfig={primaryModel} />
-        </div>
-      </section>
-
-      {/* 轻量化指标带，替代厚重卡片样式。 */}
-      <section className="data-band" aria-label="关键指标">
-        <div>
-          <strong>45%</strong>
-          <span>线索转化效率提升</span>
-        </div>
-        <div>
-          <strong>7 天</strong>
-          <span>平均方案交付周期</span>
-        </div>
-        <div>
-          <strong>98%</strong>
-          <span>客户演示满意度</span>
-        </div>
-      </section>
-
-      {/* 连续信息行，形成更接近移动端的一体化视觉流。 */}
-      <section className="feature-flow" aria-label="产品亮点">
-        {highlights.map((item) => (
-          <div key={item.title} className="feature-row">
-            <h3>{item.title}</h3>
-            <p>{item.text}</p>
+            </div>
           </div>
-        ))}
-      </section>
+        </section>
+      </main>
 
-      {/* 底部沉浸式转化区。 */}
-      <section className="immersive-cta">
-        <p className="cta-kicker">下一艘船，从更高级的销售体验开始</p>
-        <h2>让每一次看船沟通，都更接近成交</h2>
-        <p>支持移动端展示、线下讲解和线上成交闭环。</p>
-        <button className="btn primary">申请试用方案</button>
-      </section>
-
-      {/* 移动端底部固定 CTA，便于快速转化。 */}
       <div className="mobile-cta">
-        <button className="btn primary">立即咨询卖船方案</button>
+        <a className="btn primary" href="#experience">进入 3D 展示</a>
       </div>
     </div>
   )

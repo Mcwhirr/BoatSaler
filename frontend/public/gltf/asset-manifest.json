@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "generatedAt": "2026-03-19T16:04:10.921Z",
+  "generatedAt": "2026-03-24T16:57:53.317Z",
   "source": {
     "assetRoot": "../gltf",
     "publicRoot": "public/gltf"
   },
-  "primaryModelId": "PleasureBoat",
+  "primaryModelId": "PleasureBoat1",
   "models": [
     {
       "id": "PleasureBoat",
@@ -26,7 +26,33 @@
             "emissive": "/gltf/PleasureBoat/tietu/316-2_01 - Default_Emissive.png",
             "normal": "/gltf/PleasureBoat/tietu/316-2_01 - Default_Normal.png",
             "ao": "/gltf/PleasureBoat/tietu/ao.png",
+            "metalness": "/gltf/PleasureBoat/tietu/metallic.png",
             "roughness": "/gltf/PleasureBoat/tietu/rou.png"
+          }
+        }
+      ]
+    },
+    {
+      "id": "PleasureBoat1",
+      "label": "PleasureBoat1",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/PleasureBoat1/11.fbx"
+      },
+      "defaultUvSetId": "tt",
+      "uvSets": [
+        {
+          "id": "tt",
+          "label": "UV tt",
+          "directory": "/gltf/PleasureBoat1/tt",
+          "materialNameHint": "M_01___Default",
+          "textures": {
+            "baseColor": "/gltf/PleasureBoat1/tt/11_01 - Default_BaseColor.png",
+            "emissive": "/gltf/PleasureBoat1/tt/11_01 - Default_Emissive.png",
+            "metalness": "/gltf/PleasureBoat1/tt/11_01 - Default_Metallic.png",
+            "normal": "/gltf/PleasureBoat1/tt/11_01 - Default_Normal.png",
+            "roughness": "/gltf/PleasureBoat1/tt/11_01 - Default_Roughness.png",
+            "ao": "/gltf/PleasureBoat1/tt/ao.png"
           }
         }
       ]
@@ -45,8 +71,8 @@
       "id": "TwoLayerBoat",
       "label": "TwoLayerBoat",
       "model": {
-        "format": "fbx",
-        "path": "/gltf/TwoLayerBoat/TwoLayerBoat.fbx"
+        "format": "glb",
+        "path": "/gltf/TwoLayerBoat/TwoLayerBoat.glb"
       },
       "defaultUvSetId": "1",
       "uvSets": [
@@ -75,6 +101,31 @@
             "ao": "/gltf/TwoLayerBoat/2/AO_3.png",
             "metalness": "/gltf/TwoLayerBoat/2/meti_1.png",
             "roughness": "/gltf/TwoLayerBoat/2/rou_2.png"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Yacht",
+      "label": "Yacht",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/Yacht/950.fbx"
+      },
+      "defaultUvSetId": "tt",
+      "uvSets": [
+        {
+          "id": "tt",
+          "label": "UV tt",
+          "directory": "/gltf/Yacht/tt",
+          "materialNameHint": "M_01___Default",
+          "textures": {
+            "baseColor": "/gltf/Yacht/tt/950_01 - Default_BaseColor.png",
+            "emissive": "/gltf/Yacht/tt/950_01 - Default_Emissive.png",
+            "metalness": "/gltf/Yacht/tt/950_01 - Default_Metallic.png",
+            "normal": "/gltf/Yacht/tt/950_01 - Default_Normal.png",
+            "roughness": "/gltf/Yacht/tt/950_01 - Default_Roughness.png",
+            "ao": "/gltf/Yacht/tt/AO.png"
           }
         }
       ]
