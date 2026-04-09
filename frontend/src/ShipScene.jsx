@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
@@ -30,6 +30,7 @@ function normalizeMaterialName(value) {
 const WATER_SURFACE_ENABLED = true
 const EXTERIOR_STAGE_Y_OFFSET = 0.42
 const EXTERIOR_TARGET_Y = 0.5 + EXTERIOR_STAGE_Y_OFFSET * 0.35
+const EMPTY_ARRAY = []
 const DEFAULT_WATER_TUNING = {
   levelFactor: 0.18,
   radiusScale: 0.84,
@@ -47,6 +48,62 @@ const MODEL_WATER_TUNING = {
   Yacht: {
     exteriorModelLiftY: 0.06
   }
+}
+
+const DEFAULT_EXTERIOR_CAMERA_PRESET = {
+  position: [-6.2, 1.65, 1.7],
+  zoom: 1.18,
+  targetY: EXTERIOR_TARGET_Y,
+  stageOffsetY: EXTERIOR_STAGE_Y_OFFSET
+}
+
+const STUDIO_EXTERIOR_CAMERA_PRESET = {
+  position: [-5.4, 1.32, 2.18],
+  zoom: 1.34,
+  targetY: 0.28,
+  stageOffsetY: 0
+}
+
+const DEFAULT_INTERIOR_DECK_PRESETS = {
+  '1': {
+    position: [0, 0, -0.66],
+    yaw: 0,
+    pitch: -0.08
+  },
+  '2': {
+    position: [0, 0.98, -0.66],
+    yaw: 0,
+    pitch: -0.08
+  }
+}
+
+const TEST_HIGH_INTERIOR_DECK_PRESETS = {
+  '1': {
+    position: [0, 0.78, -1.55],
+    yaw: 0,
+    pitch: -0.14
+  },
+  '2': {
+    position: [0, 0.78, -1.55],
+    yaw: 0,
+    pitch: -0.14
+  }
+}
+
+function isStudioLookModel(modelId) {
+  return modelId === 'TestHigh'
+}
+
+function getExteriorCameraPreset(modelId) {
+  return isStudioLookModel(modelId)
+    ? STUDIO_EXTERIOR_CAMERA_PRESET
+    : DEFAULT_EXTERIOR_CAMERA_PRESET
+}
+
+function getInteriorDeckPresets(modelId) {
+  return modelId === 'TestHigh'
+    ? TEST_HIGH_INTERIOR_DECK_PRESETS
+    : DEFAULT_INTERIOR_DECK_PRESETS
 }
 
 function getWaterTuning(modelId) {
@@ -118,7 +175,196 @@ function createWaterSurface() {
   return { mesh, material, geometry }
 }
 
-export default function ShipScene({ modelConfig }) {
+function getOrderFocusPresets(modelId) {
+  if (modelId === 'TestHigh') {
+    return {
+      overview: {
+        type: 'exterior',
+        position: STUDIO_EXTERIOR_CAMERA_PRESET.position,
+        zoom: STUDIO_EXTERIOR_CAMERA_PRESET.zoom,
+        target: [0, STUDIO_EXTERIOR_CAMERA_PRESET.targetY, 0]
+      },
+      interior: {
+        type: 'interior',
+        deck: '1'
+      },
+      engine: {
+        type: 'exterior',
+        position: [0.2, 1.08, -3.35],
+        zoom: 2.52,
+        target: [0.06, 0.6, -2.42]
+      },
+      console: {
+        type: 'interior',
+        deck: '1',
+        position: [0, 0.82, -1.02],
+        yaw: 0,
+        pitch: -0.1
+      }
+    }
+  }
+
+  return {
+    overview: {
+      type: 'exterior',
+      position: DEFAULT_EXTERIOR_CAMERA_PRESET.position,
+      zoom: DEFAULT_EXTERIOR_CAMERA_PRESET.zoom,
+      target: [0, DEFAULT_EXTERIOR_CAMERA_PRESET.targetY, 0]
+    },
+    interior: {
+      type: 'interior',
+      deck: '1'
+    },
+    engine: {
+      type: 'exterior',
+      position: DEFAULT_EXTERIOR_CAMERA_PRESET.position,
+      zoom: DEFAULT_EXTERIOR_CAMERA_PRESET.zoom,
+      target: [0, DEFAULT_EXTERIOR_CAMERA_PRESET.targetY, 0]
+    },
+    console: {
+      type: 'exterior',
+      position: DEFAULT_EXTERIOR_CAMERA_PRESET.position,
+      zoom: DEFAULT_EXTERIOR_CAMERA_PRESET.zoom,
+      target: [0, DEFAULT_EXTERIOR_CAMERA_PRESET.targetY, 0]
+    }
+  }
+}
+
+function getColorShaderPreset(colorConfig) {
+  const colorId = colorConfig?.id ?? 'pearl-white'
+  const fallbackHex = colorConfig?.hex ?? '#f2f3f5'
+  const presetMap = {
+    'pearl-white': {
+      color: '#f5f6fa',
+      strength: 0.22,
+      lift: 0.02
+    },
+    'deep-sea-blue': {
+      color: '#28567b',
+      strength: 0.92,
+      lift: -0.02
+    },
+    'graphite-gray': {
+      color: '#626973',
+      strength: 0.86,
+      lift: -0.04
+    },
+    'rescue-red': {
+      color: '#bc2b2b',
+      strength: 0.96,
+      lift: -0.01
+    }
+  }
+
+  return presetMap[colorId] ?? {
+    color: fallbackHex,
+    strength: 0.6,
+    lift: 0
+  }
+}
+
+function isColorTintCandidate(material, options = {}) {
+  const { allowHighMetalness = false } = options
+  if (!material) {
+    return false
+  }
+
+  const materialName = `${material.name ?? ''}`.toLowerCase()
+  if (
+    material.transparent ||
+    material.opacity < 0.98 ||
+    materialName.includes('glass') ||
+    materialName.includes('window') ||
+    materialName.includes('rail') ||
+    materialName.includes('metal')
+  ) {
+    return false
+  }
+
+  if (allowHighMetalness) {
+    return true
+  }
+
+  return (material.metalness ?? 0) < 0.72
+}
+
+function applyShaderTintMaterial(material, colorPreset, options = {}) {
+  const {
+    targetWhiteSurfaces = false,
+    allowHighMetalness = false
+  } = options
+
+  if (!material?.isMeshStandardMaterial || !isColorTintCandidate(material, { allowHighMetalness })) {
+    return material
+  }
+
+  const shaderTintUniforms = material.userData.shaderTintUniforms ?? {
+    uShaderTintColor: { value: new THREE.Color(colorPreset.color) },
+    uShaderTintStrength: { value: colorPreset.strength },
+    uShaderTintLift: { value: colorPreset.lift },
+    uShaderTintWhiteOnly: { value: targetWhiteSurfaces ? 1 : 0 }
+  }
+
+  shaderTintUniforms.uShaderTintColor.value.set(colorPreset.color)
+  shaderTintUniforms.uShaderTintStrength.value = colorPreset.strength
+  shaderTintUniforms.uShaderTintLift.value = colorPreset.lift
+  shaderTintUniforms.uShaderTintWhiteOnly.value = targetWhiteSurfaces ? 1 : 0
+  material.userData.shaderTintUniforms = shaderTintUniforms
+
+  if (!material.userData.hasShaderTintHook) {
+    material.onBeforeCompile = (shader) => {
+      shader.uniforms.uShaderTintColor = shaderTintUniforms.uShaderTintColor
+      shader.uniforms.uShaderTintStrength = shaderTintUniforms.uShaderTintStrength
+      shader.uniforms.uShaderTintLift = shaderTintUniforms.uShaderTintLift
+      shader.uniforms.uShaderTintWhiteOnly = shaderTintUniforms.uShaderTintWhiteOnly
+
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+uniform vec3 uShaderTintColor;
+uniform float uShaderTintStrength;
+uniform float uShaderTintLift;
+uniform float uShaderTintWhiteOnly;
+`
+        )
+        .replace(
+          'vec4 diffuseColor = vec4( diffuse, opacity );',
+          `vec4 diffuseColor = vec4( diffuse, opacity );
+float tintLuma = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+float tintChroma = max(max(diffuseColor.r, diffuseColor.g), diffuseColor.b) - min(min(diffuseColor.r, diffuseColor.g), diffuseColor.b);
+float broadTintMask = smoothstep(0.04, 0.96, tintLuma);
+float whiteTintMask = smoothstep(0.62, 0.94, tintLuma) * (1.0 - smoothstep(0.08, 0.24, tintChroma));
+float tintMask = mix(broadTintMask, whiteTintMask, clamp(uShaderTintWhiteOnly, 0.0, 1.0)) * clamp(uShaderTintStrength, 0.0, 1.0);
+vec3 tintTarget = diffuseColor.rgb * uShaderTintColor;
+diffuseColor.rgb = mix(diffuseColor.rgb, tintTarget, tintMask);
+diffuseColor.rgb += vec3(uShaderTintLift);
+`
+        )
+    }
+
+    material.customProgramCacheKey = () => 'salesboat-shader-tint-v1'
+    material.userData.hasShaderTintHook = true
+    material.needsUpdate = true
+  }
+
+  return material
+}
+
+function shouldApplyColorway(modelId, partRole) {
+  if (partRole === 'hull') {
+    return true
+  }
+
+  return ['PleasureBoat', 'PleasureBoat1', 'Yacht'].includes(modelId) && partRole === 'full'
+}
+
+export default function ShipScene({
+  modelConfig,
+  focusTarget = 'overview',
+  colorConfig = null,
+  overviewZoomScale = 1
+}) {
   const assetBaseUrl = import.meta.env.BASE_URL
   const resolveAssetPath = (relativePath) => `${assetBaseUrl}${relativePath}`
   const resolveManifestPath = (assetPath) => {
@@ -139,11 +385,29 @@ export default function ShipScene({ modelConfig }) {
 
   const modelId = modelConfig?.id ?? 'TwoLayerBoat'
   const waterTuning = getWaterTuning(modelId)
+  const compositeParts = modelConfig?.parts ?? EMPTY_ARRAY
+  const hasCompositeParts = compositeParts.length > 0
   const modelFormat = (modelConfig?.model?.format ?? 'glb').toLowerCase()
   const modelPath = modelConfig?.model?.path
     ? resolveManifestPath(modelConfig.model.path)
     : resolveAssetPath('gltf/TwoLayerBoat/TwoLayerBoat.glb')
   const isTwoLayerBoat = modelId === 'TwoLayerBoat'
+  const isStudioLook = isStudioLookModel(modelId)
+  const baseExteriorCameraPreset = getExteriorCameraPreset(modelId)
+  const exteriorCameraPreset = {
+    ...baseExteriorCameraPreset,
+    zoom: baseExteriorCameraPreset.zoom * overviewZoomScale
+  }
+  const interiorDeckPresetConfig = getInteriorDeckPresets(modelId)
+  const baseOrderFocusPresets = getOrderFocusPresets(modelId)
+  const orderFocusPresets = {
+    ...baseOrderFocusPresets,
+    overview: {
+      ...baseOrderFocusPresets.overview,
+      zoom: (baseOrderFocusPresets.overview?.zoom ?? exteriorCameraPreset.zoom) * overviewZoomScale
+    }
+  }
+  const shouldShowWaterSurface = WATER_SURFACE_ENABLED && !isStudioLook
   // ===== TwoLayerBoat Locked Block START =====
   // TwoLayerBoat 维持固定 GLB 入口，避免被自动配置改动影响贴图稳定性。
   const effectiveModelPath = isTwoLayerBoat
@@ -151,7 +415,7 @@ export default function ShipScene({ modelConfig }) {
     : modelPath
   const effectiveModelFormat = isTwoLayerBoat ? 'glb' : modelFormat
   // ===== TwoLayerBoat Locked Block END =====
-  const uvSets = modelConfig?.uvSets ?? []
+  const uvSets = modelConfig?.uvSets ?? EMPTY_ARRAY
 
   const canvasRef = useRef(null)
   const controlsRef = useRef(null)
@@ -159,8 +423,12 @@ export default function ShipScene({ modelConfig }) {
   const modeRef = useRef('exterior')
   const interiorDeckRef = useRef('1')
   const setViewPresetRef = useRef(() => {})
+  const setFocusTargetRef = useRef(() => {})
+  const setColorConfigRef = useRef(() => {})
   const [activeView, setActiveView] = useState('exterior')
   const [activeDeck, setActiveDeck] = useState('1')
+  const [isSceneLoading, setIsSceneLoading] = useState(true)
+  const [sceneError, setSceneError] = useState('')
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -168,30 +436,74 @@ export default function ShipScene({ modelConfig }) {
       return undefined
     }
 
+    let isDisposed = false
+    setIsSceneLoading(true)
+    setSceneError('')
+
     const scene = new THREE.Scene()
     const presentationRoot = new THREE.Group()
     const modelRoot = new THREE.Group()
     const waterRoot = new THREE.Group()
-    const waterSurface = WATER_SURFACE_ENABLED ? createWaterSurface() : null
+    const stageRoot = new THREE.Group()
+    const waterSurface = shouldShowWaterSurface ? createWaterSurface() : null
     scene.add(presentationRoot)
-    presentationRoot.add(waterRoot, modelRoot)
+    presentationRoot.add(stageRoot, waterRoot, modelRoot)
 
     const exteriorCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.005, 5000)
-    const interiorCamera = new THREE.PerspectiveCamera(56, 1, 0.005, 5000)
-    exteriorCamera.position.set(-6.2, 1.65, 1.7)
-    exteriorCamera.zoom = 1.18
-    interiorCamera.position.set(0, 0.68, -0.82)
+    const interiorCamera = new THREE.PerspectiveCamera(56, 1, isStudioLook ? 0.02 : 0.005, 5000)
+    exteriorCamera.position.set(...exteriorCameraPreset.position)
+    exteriorCamera.zoom = exteriorCameraPreset.zoom
+    interiorCamera.position.set(...(interiorDeckPresetConfig['1']?.position ?? [0, 0.68, -0.82]))
     scene.add(exteriorCamera, interiorCamera)
 
     let activeCamera = exteriorCamera
     cameraRef.current = activeCamera
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.5)
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.55)
-    keyLight.position.set(4.2, 2.4, 3.4)
-    const fillLight = new THREE.DirectionalLight(0xffffff, 1.05)
-    fillLight.position.set(-4.5, 4.2, -3.5)
-    scene.add(ambientLight, keyLight, fillLight)
+    const ambientLight = new THREE.AmbientLight(0xffffff, isStudioLook ? 0.72 : 1.5)
+    const keyLight = new THREE.DirectionalLight(0xffffff, isStudioLook ? 2.35 : 1.55)
+    keyLight.position.set(...(isStudioLook ? [5.4, 3.5, 4.8] : [4.2, 2.4, 3.4]))
+    keyLight.target = modelRoot
+    keyLight.castShadow = true
+    keyLight.shadow.mapSize.set(2048, 2048)
+    keyLight.shadow.bias = -0.0002
+    keyLight.shadow.normalBias = 0.03
+    keyLight.shadow.camera.near = 0.5
+    keyLight.shadow.camera.far = 24
+    keyLight.shadow.camera.left = -8
+    keyLight.shadow.camera.right = 8
+    keyLight.shadow.camera.top = 8
+    keyLight.shadow.camera.bottom = -8
+    const fillLight = new THREE.DirectionalLight(
+      isStudioLook ? new THREE.Color('#f5f7fa') : new THREE.Color('#ffffff'),
+      isStudioLook ? 0 : 1.05
+    )
+    fillLight.position.set(...(isStudioLook ? [-5.2, 2.4, 3.3] : [-4.5, 4.2, -3.5]))
+    const rimLight = new THREE.DirectionalLight(
+      new THREE.Color(isStudioLook ? '#ffffff' : '#ffffff'),
+      isStudioLook ? 0 : 0.4
+    )
+    rimLight.position.set(-2.8, 1.2, -5.5)
+    const topLight = new THREE.DirectionalLight(0xffffff, isStudioLook ? 0 : 0.35)
+    topLight.position.set(0.5, 6.4, 1.2)
+    topLight.target = modelRoot
+    topLight.castShadow = true
+    topLight.shadow.mapSize.set(1024, 1024)
+    topLight.shadow.bias = -0.00015
+    topLight.shadow.normalBias = 0.02
+    topLight.shadow.camera.near = 0.5
+    topLight.shadow.camera.far = 22
+    topLight.shadow.camera.left = -7
+    topLight.shadow.camera.right = 7
+    topLight.shadow.camera.top = 7
+    topLight.shadow.camera.bottom = -7
+    const underGlowLight = new THREE.PointLight(
+      new THREE.Color(isStudioLook ? '#72f6ff' : '#ffffff'),
+      isStudioLook ? 0 : 0,
+      10,
+      2
+    )
+    underGlowLight.position.set(0.2, -0.55, 1.1)
+    scene.add(ambientLight, keyLight, fillLight, rimLight, topLight, underGlowLight)
 
     if (waterSurface) {
       waterRoot.add(waterSurface.mesh)
@@ -199,10 +511,12 @@ export default function ShipScene({ modelConfig }) {
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.setClearAlpha(0)
+    renderer.setClearColor('#010203', 1)
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.toneMappingExposure = 1.1
+    renderer.toneMappingExposure = isStudioLook ? 0.94 : 1.1
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
     const pmremGenerator = new THREE.PMREMGenerator(renderer)
     const environmentTexture = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture
@@ -212,12 +526,12 @@ export default function ShipScene({ modelConfig }) {
     controls.enableDamping = true
     controls.enablePan = false
     controls.enableZoom = false
-    controls.target.set(0, EXTERIOR_TARGET_Y, 0)
+    controls.target.set(0, exteriorCameraPreset.targetY, 0)
     controls.update()
     controlsRef.current = controls
 
     const interiorPose = {
-      position: new THREE.Vector3(0, 0.68, -0.82),
+      position: new THREE.Vector3(...(interiorDeckPresetConfig['1']?.position ?? [0, 0.68, -0.82])),
       yaw: 0,
       pitch: 0,
       dragging: false,
@@ -275,25 +589,36 @@ export default function ShipScene({ modelConfig }) {
     window.addEventListener('pointerup', onPointerUp)
     window.addEventListener('pointercancel', onPointerUp)
 
-    const interiorDeckPresets = {
-      '1': {
-        position: new THREE.Vector3(0, 0, -0.66),
-        yaw: 0,
-        pitch: -0.08
-      },
-      '2': {
-        position: new THREE.Vector3(0, 0.98, -0.66),
-        yaw: 0,
-        pitch: -0.08
-      }
-    }
+    const interiorDeckPresets = Object.fromEntries(
+      Object.entries(interiorDeckPresetConfig).map(([deck, preset]) => [
+        deck,
+        {
+          position: new THREE.Vector3(...preset.position),
+          yaw: preset.yaw,
+          pitch: preset.pitch
+        }
+      ])
+    )
 
     const updatePresentationOffset = (mode) => {
-      presentationRoot.position.y = mode === 'exterior' ? EXTERIOR_STAGE_Y_OFFSET : 0
-      modelRoot.position.y = mode === 'exterior' ? waterTuning.exteriorModelLiftY : 0
+      presentationRoot.position.y = mode === 'exterior' ? exteriorCameraPreset.stageOffsetY : 0
+      modelRoot.position.y = mode === 'exterior' && shouldShowWaterSurface ? waterTuning.exteriorModelLiftY : 0
     }
 
-    setViewPresetRef.current = (mode, deck = interiorDeckRef.current) => {
+    const applyExteriorCameraPreset = (preset) => {
+      const safePreset = preset ?? {}
+      const nextPosition = safePreset.position ?? exteriorCameraPreset.position
+      const nextZoom = safePreset.zoom ?? exteriorCameraPreset.zoom
+      const nextTarget = safePreset.target ?? [0, exteriorCameraPreset.targetY, 0]
+
+      exteriorCamera.position.set(...nextPosition)
+      exteriorCamera.zoom = nextZoom
+      controls.target.set(...nextTarget)
+      exteriorCamera.updateProjectionMatrix()
+      controls.update()
+    }
+
+    setViewPresetRef.current = (mode, deck = interiorDeckRef.current, preset = null) => {
       modeRef.current = mode
       const effectiveDeck = isTwoLayerBoat ? deck : '1'
 
@@ -308,24 +633,34 @@ export default function ShipScene({ modelConfig }) {
         cameraRef.current = interiorCamera
         controls.enabled = false
 
-        const preset = interiorDeckPresets[effectiveDeck] ?? interiorDeckPresets['1']
-        interiorPose.position.copy(preset.position)
-        interiorPose.yaw = preset.yaw
-        interiorPose.pitch = preset.pitch
+        const deckPreset = interiorDeckPresets[effectiveDeck] ?? interiorDeckPresets['1']
+        const nextInteriorPosition = preset?.position
+          ? new THREE.Vector3(...preset.position)
+          : deckPreset.position
+        interiorPose.position.copy(nextInteriorPosition)
+        interiorPose.yaw = preset?.yaw ?? deckPreset.yaw
+        interiorPose.pitch = preset?.pitch ?? deckPreset.pitch
         updateInteriorOrientation()
       } else {
         activeCamera = exteriorCamera
         cameraRef.current = exteriorCamera
         controls.enabled = true
-        exteriorCamera.position.set(-6.2, 1.65, 1.7)
-        exteriorCamera.zoom = 1.18
-        controls.target.set(0, EXTERIOR_TARGET_Y, 0)
-        exteriorCamera.updateProjectionMatrix()
-        controls.update()
+        applyExteriorCameraPreset(preset)
       }
     }
 
+    setFocusTargetRef.current = (target) => {
+      const preset = orderFocusPresets[target] ?? orderFocusPresets.overview
+      if (preset.type === 'interior') {
+        setViewPresetRef.current('interior', preset.deck ?? '1', preset)
+        return
+      }
+
+      setViewPresetRef.current('exterior', interiorDeckRef.current, preset)
+    }
+
     setViewPresetRef.current('exterior')
+    setFocusTargetRef.current(focusTarget)
 
     let loadedRoot = null
     const gltfLoader = new GLTFLoader()
@@ -337,14 +672,14 @@ export default function ShipScene({ modelConfig }) {
       textureLoader.load(path, resolve, undefined, reject)
     })
 
-    const loadModelAsync = () => new Promise((resolve, reject) => {
-      if (effectiveModelFormat === 'fbx') {
-        fbxLoader.load(effectiveModelPath, (object3d) => resolve(object3d), undefined, reject)
+    const loadModelAsync = ({ format, path }) => new Promise((resolve, reject) => {
+      if (format === 'fbx') {
+        fbxLoader.load(path, (object3d) => resolve(object3d), undefined, reject)
         return
       }
 
       gltfLoader.load(
-        effectiveModelPath,
+        path,
         (gltf) => {
           const object3d = gltf.scene ?? gltf.scenes?.[0]
           if (!object3d) {
@@ -371,6 +706,76 @@ export default function ShipScene({ modelConfig }) {
       return true
     }
 
+    const applyMeshShadowFlags = (rootObject) => {
+      rootObject.traverse((child) => {
+        if (!child.isMesh) {
+          return
+        }
+
+        child.castShadow = true
+        child.receiveShadow = true
+      })
+    }
+
+    const createPbrMaterial = (material) => {
+      const upgradedMaterial = new THREE.MeshStandardMaterial({
+        name: material?.name || '',
+        color: material?.color?.clone?.() ?? new THREE.Color('#ffffff'),
+        emissive: material?.emissive?.clone?.() ?? new THREE.Color('#000000'),
+        emissiveIntensity: material?.emissiveIntensity ?? 1,
+        opacity: material?.opacity ?? 1,
+        transparent: material?.transparent ?? false,
+        side: material?.side ?? THREE.FrontSide,
+        alphaTest: material?.alphaTest ?? 0,
+        depthWrite: material?.depthWrite ?? true,
+        depthTest: material?.depthTest ?? true,
+        wireframe: material?.wireframe ?? false,
+        flatShading: material?.flatShading ?? false,
+        fog: material?.fog ?? true,
+        metalness: 'metalness' in (material ?? {}) ? material.metalness : 0.22,
+        roughness: 'roughness' in (material ?? {}) ? material.roughness : 0.42,
+        envMapIntensity: 1.9
+      })
+
+      if (material?.map) {
+        upgradedMaterial.map = material.map
+      }
+      if (material?.normalMap) {
+        upgradedMaterial.normalMap = material.normalMap
+      }
+      if (material?.aoMap) {
+        upgradedMaterial.aoMap = material.aoMap
+      }
+      if (material?.metalnessMap) {
+        upgradedMaterial.metalnessMap = material.metalnessMap
+      }
+      if (material?.roughnessMap) {
+        upgradedMaterial.roughnessMap = material.roughnessMap
+      }
+      if (material?.emissiveMap) {
+        upgradedMaterial.emissiveMap = material.emissiveMap
+      }
+      if (material?.normalScale) {
+        upgradedMaterial.normalScale = material.normalScale.clone()
+      }
+
+      return upgradedMaterial
+    }
+
+    const getMaterialForUvMaps = (material, options = {}) => {
+      const { preferPbrFinish = false } = options
+
+      if (preferPbrFinish && !material?.isMeshStandardMaterial) {
+        return createPbrMaterial(material)
+      }
+
+      if (preferPbrFinish && material?.isMeshStandardMaterial) {
+        material.envMapIntensity = Math.max(material.envMapIntensity ?? 0, 1.9)
+      }
+
+      return material
+    }
+
     const applyMapsToMaterial = (material, maps, options = {}) => {
       const { canUseUvMaps = true } = options
 
@@ -390,6 +795,7 @@ export default function ShipScene({ modelConfig }) {
       }
       if (maps.ao && canUseUvMaps) {
         material.aoMap = maps.ao
+        material.aoMapIntensity = 0.72
       }
       if (maps.metalness && canUseUvMaps) {
         material.metalnessMap = maps.metalness
@@ -399,10 +805,13 @@ export default function ShipScene({ modelConfig }) {
         material.roughnessMap = maps.roughness
         material.roughness = 1
       }
+      if ('envMapIntensity' in material) {
+        material.envMapIntensity = Math.max(material.envMapIntensity ?? 0, 1.9)
+      }
       material.needsUpdate = true
     }
 
-    const applyUvSetMaps = (rootObject, uvSet, maps) => {
+    const applyUvSetMaps = (rootObject, uvSet, maps, options = {}) => {
       const hint = uvSet.materialNameHint
       const normalizedHint = normalizeMaterialName(hint)
       let appliedCount = 0
@@ -415,21 +824,35 @@ export default function ShipScene({ modelConfig }) {
 
         const hasUv = ensureAoUv(child)
         const materials = Array.isArray(child.material) ? child.material : [child.material]
-        materials.forEach((material) => {
+        const updatedMaterials = materials.map((material) => {
+          const targetMaterial = getMaterialForUvMaps(material, options)
           const normalizedMaterialName = normalizeMaterialName(material?.name)
           if (hint && normalizedMaterialName !== normalizedHint) {
-            return
+            return targetMaterial
           }
 
           if (!hasUv) {
             skippedMeshCount += 1
-            applyMapsToMaterial(material, maps, { canUseUvMaps: false })
-            return
+            applyMapsToMaterial(targetMaterial, maps, { canUseUvMaps: false })
+            return targetMaterial
           }
 
-          applyMapsToMaterial(material, maps, { canUseUvMaps: true })
+          applyMapsToMaterial(targetMaterial, maps, { canUseUvMaps: true })
           appliedCount += 1
+          return targetMaterial
         })
+
+        if (Array.isArray(child.material)) {
+          materials.forEach((material, index) => {
+            if (updatedMaterials[index] !== material) {
+              material?.dispose?.()
+            }
+          })
+          child.material = updatedMaterials
+        } else if (updatedMaterials[0] !== child.material) {
+          child.material?.dispose?.()
+          child.material = updatedMaterials[0]
+        }
       })
 
       return { appliedCount, skippedMeshCount }
@@ -509,10 +932,10 @@ export default function ShipScene({ modelConfig }) {
     }
     // ===== TwoLayerBoat Locked Block END =====
 
-    const loadAndApplyUvMaps = async (rootObject) => {
-      const shouldFlipY = effectiveModelFormat !== 'fbx'
+    const loadAndApplyUvMaps = async (rootObject, targetUvSets, targetModelFormat, targetLabel) => {
+      const shouldFlipY = targetModelFormat !== 'fbx'
 
-      for (const uvSet of uvSets) {
+      for (const uvSet of targetUvSets) {
         const textureEntries = Object.entries(uvSet.textures ?? {}).filter(([, path]) => Boolean(path))
         if (textureEntries.length === 0) {
           continue
@@ -532,15 +955,19 @@ export default function ShipScene({ modelConfig }) {
         )
 
         const textureMap = Object.fromEntries(loadedTextures)
-        const initialResult = applyUvSetMaps(rootObject, uvSet, textureMap)
+        const initialResult = applyUvSetMaps(rootObject, uvSet, textureMap, {
+          preferPbrFinish: targetModelFormat === 'fbx'
+        })
         if (initialResult.appliedCount === 0) {
           // 当材质名提示未命中时，回退为整模型应用，避免贴图完全不生效。
-          const fallbackResult = applyUvSetMaps(rootObject, { ...uvSet, materialNameHint: null }, textureMap)
+          const fallbackResult = applyUvSetMaps(rootObject, { ...uvSet, materialNameHint: null }, textureMap, {
+            preferPbrFinish: targetModelFormat === 'fbx'
+          })
           if (fallbackResult.appliedCount === 0 && fallbackResult.skippedMeshCount > 0) {
-            console.warn(`Skipped UV texture application for ${modelId}/${uvSet.id}: model meshes do not contain UV coordinates.`)
+            console.warn(`Skipped UV texture application for ${targetLabel}/${uvSet.id}: model meshes do not contain UV coordinates.`)
           }
         } else if (initialResult.skippedMeshCount > 0) {
-          console.warn(`Partially skipped UV texture application for ${modelId}/${uvSet.id}: some meshes do not contain UV coordinates.`)
+          console.warn(`Partially skipped UV texture application for ${targetLabel}/${uvSet.id}: some meshes do not contain UV coordinates.`)
         }
       }
     }
@@ -628,26 +1055,317 @@ export default function ShipScene({ modelConfig }) {
       })
     }
 
-    loadModelAsync()
-      .then(async (object3d) => {
-        loadedRoot = object3d
+    const updateMeshMaterials = (mesh, transformMaterial) => {
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+      const updatedMaterials = materials.map((material) => transformMaterial(material))
 
-        if (isTwoLayerBoat) {
-          try {
-            await loadAndApplyTwoLayerMaps(object3d)
-          } catch (error) {
-            console.error('Failed to load fixed texture maps for TwoLayerBoat:', error)
+      if (Array.isArray(mesh.material)) {
+        materials.forEach((material, index) => {
+          if (updatedMaterials[index] !== material) {
+            material?.dispose?.()
           }
-          applyTwoLayerOverrides(object3d)
-        } else if (modelId === 'TestModel') {
-          applyTestModelOverrides(object3d)
-        } else if (uvSets.length > 0) {
-          try {
-            await loadAndApplyUvMaps(object3d)
-          } catch (error) {
-            console.error(`Failed to load UV set textures for ${modelId}:`, error)
+        })
+        mesh.material = updatedMaterials
+        return
+      }
+
+      if (updatedMaterials[0] !== mesh.material) {
+        mesh.material?.dispose?.()
+        mesh.material = updatedMaterials[0]
+      }
+    }
+
+    const applyColorConfigToObject = (rootObject, partRole) => {
+      if (!shouldApplyColorway(modelId, partRole)) {
+        return
+      }
+
+      const colorPreset = getColorShaderPreset(colorConfig)
+      const colorOptions = partRole === 'hull'
+        ? { targetWhiteSurfaces: true, allowHighMetalness: true }
+        : {}
+      rootObject.traverse((child) => {
+        if (!child.isMesh || !child.material) {
+          return
+        }
+
+        updateMeshMaterials(child, (material) => applyShaderTintMaterial(material, colorPreset, colorOptions))
+      })
+    }
+
+    const getTestHighPartRole = (partId, partIndex) => {
+      const partLabel = `${partId ?? ''}`
+
+      if (partLabel.includes('灯带') || partLabel.includes('控制台') || partIndex === 0) {
+        return 'accent'
+      }
+
+      if (partLabel.includes('船体') || partLabel.includes('顶棚') || partIndex === 1) {
+        return 'hull'
+      }
+
+      if (partLabel.includes('船舱') || partLabel.includes('栏杆') || partLabel.includes('沙发') || partIndex === 2) {
+        return 'interior'
+      }
+
+      if (partLabel.includes('马达') || partIndex === 3) {
+        return 'engine'
+      }
+
+      return 'default'
+    }
+
+    const applyStudioMaterialPreset = (material, preset = {}) => {
+      const targetMaterial = material?.isMeshStandardMaterial ? material : createPbrMaterial(material)
+
+      if (targetMaterial.color && preset.color) {
+        targetMaterial.color.set(preset.color)
+      }
+
+      if (targetMaterial.color && preset.colorMultiply) {
+        targetMaterial.color.multiplyScalar(preset.colorMultiply)
+      }
+
+      if (preset.metalness !== undefined) {
+        targetMaterial.metalness = targetMaterial.metalnessMap && preset.preserveMetalnessMapRange
+          ? Math.max(1, preset.metalness)
+          : preset.metalness
+      }
+
+      if (preset.roughness !== undefined) {
+        targetMaterial.roughness = targetMaterial.roughnessMap && preset.preserveRoughnessMapRange
+          ? Math.max(1, preset.roughness)
+          : preset.roughness
+      }
+
+      if (targetMaterial.aoMap && preset.aoMapIntensity !== undefined) {
+        targetMaterial.aoMapIntensity = preset.aoMapIntensity
+      }
+
+      if (preset.envMapIntensity !== undefined) {
+        targetMaterial.envMapIntensity = preset.envMapIntensity
+      }
+
+      if (preset.disableMetalnessMap) {
+        targetMaterial.metalnessMap = null
+      }
+
+      if (preset.disableRoughnessMap) {
+        targetMaterial.roughnessMap = null
+      }
+
+      if (targetMaterial.normalMap && preset.normalScale !== undefined) {
+        targetMaterial.normalScale = new THREE.Vector2(preset.normalScale, -preset.normalScale)
+      }
+
+      if (targetMaterial.emissiveMap && preset.emissiveColor) {
+        targetMaterial.emissive = new THREE.Color(preset.emissiveColor)
+      }
+
+      if (targetMaterial.emissiveMap && preset.emissiveIntensity !== undefined) {
+        targetMaterial.emissiveIntensity = preset.emissiveIntensity
+      }
+
+      targetMaterial.side = THREE.DoubleSide
+      targetMaterial.needsUpdate = true
+
+      return targetMaterial
+    }
+
+    const applyTestHighStudioOverrides = (rootObject, partId, partIndex) => {
+      const partRole = getTestHighPartRole(partId, partIndex)
+      const partPresetMap = {
+        default: {
+          colorMultiply: 0.94,
+          metalness: 0.1,
+          roughness: 0.34,
+          aoMapIntensity: 0.68,
+          envMapIntensity: 1
+        },
+        accent: {
+          colorMultiply: 0.68,
+          metalness: 0.14,
+          roughness: 0.46,
+          aoMapIntensity: 0.72,
+          envMapIntensity: 0.45,
+          emissiveIntensity: 0.2
+        },
+        hull: {
+          
+        },
+        interior: {
+          colorMultiply: 0.88,
+          metalness: 0.2,
+          roughness: 0.72,
+          aoMapIntensity: 0.7,
+          envMapIntensity: 0.65,
+          preserveMetalnessMapRange: true,
+          preserveRoughnessMapRange: true,
+          normalScale: 0.82
+        },
+        engine: {
+          color: '#8e9db3',
+          metalness: 0.92,
+          roughness: 0.28,
+          aoMapIntensity: 0.24,
+          envMapIntensity: 2.05
+        }
+      }
+      const partPreset = partPresetMap[partRole] ?? partPresetMap.default
+
+      rootObject.traverse((child) => {
+        if (!child.isMesh || !child.material) {
+          return
+        }
+
+        ensureAoUv(child)
+        updateMeshMaterials(child, (material) => applyStudioMaterialPreset(material, partPreset))
+      })
+    }
+
+    const loadCompositeModelAsync = async () => {
+      if (!hasCompositeParts) {
+        const object3d = await loadModelAsync({
+          format: effectiveModelFormat,
+          path: effectiveModelPath
+        })
+        applyMeshShadowFlags(object3d)
+
+        return {
+          root: object3d,
+          applyMaterials: async () => {
+            if (isTwoLayerBoat) {
+              try {
+                await loadAndApplyTwoLayerMaps(object3d)
+              } catch (error) {
+                console.error('Failed to load fixed texture maps for TwoLayerBoat:', error)
+              }
+              applyTwoLayerOverrides(object3d)
+              return
+            }
+
+            if (modelId === 'TestModel') {
+              applyTestModelOverrides(object3d)
+              return
+            }
+
+            if (uvSets.length > 0) {
+              try {
+                await loadAndApplyUvMaps(object3d, uvSets, effectiveModelFormat, modelId)
+              } catch (error) {
+                console.error(`Failed to load UV set textures for ${modelId}:`, error)
+              }
+            }
+
+            if (modelId === 'TestHigh') {
+              applyTestHighStudioOverrides(object3d, modelId, 0)
+            }
+
+            applyColorConfigToObject(object3d, 'full')
           }
         }
+      }
+
+      const compositeRoot = new THREE.Group()
+      const loadedParts = await Promise.all(compositeParts.map(async (part) => {
+        const partFormat = (part?.model?.format ?? 'glb').toLowerCase()
+        const partPath = resolveManifestPath(part?.model?.path ?? '')
+        const object3d = await loadModelAsync({
+          format: partFormat,
+          path: partPath
+        })
+        applyMeshShadowFlags(object3d)
+
+        compositeRoot.add(object3d)
+
+        return {
+          id: part.id,
+          format: partFormat,
+          object3d,
+          uvSets: part.uvSets ?? []
+        }
+      }))
+
+      return {
+        root: compositeRoot,
+        applyMaterials: async () => {
+          for (const [partIndex, part] of loadedParts.entries()) {
+            if (part.uvSets.length === 0) {
+              if (modelId === 'TestHigh') {
+                applyTestHighStudioOverrides(part.object3d, part.id, partIndex)
+              }
+              continue
+            }
+
+            try {
+              await loadAndApplyUvMaps(part.object3d, part.uvSets, part.format, `${modelId}/${part.id}`)
+            } catch (error) {
+              console.error(`Failed to load UV set textures for ${modelId}/${part.id}:`, error)
+            }
+
+            if (modelId === 'TestHigh') {
+              applyTestHighStudioOverrides(part.object3d, part.id, partIndex)
+            }
+
+            applyColorConfigToObject(part.object3d, getTestHighPartRole(part.id, partIndex))
+          }
+        }
+      }
+    }
+
+    setColorConfigRef.current = (nextColorConfig) => {
+      const colorPreset = getColorShaderPreset(nextColorConfig)
+
+      const applyLiveColorConfig = (rootObject, partRole) => {
+        if (!shouldApplyColorway(modelId, partRole)) {
+          return
+        }
+
+        const colorOptions = partRole === 'hull'
+          ? { targetWhiteSurfaces: true, allowHighMetalness: true }
+          : {}
+
+        rootObject.traverse((child) => {
+          if (!child.isMesh || !child.material) {
+            return
+          }
+
+          updateMeshMaterials(child, (material) => applyShaderTintMaterial(material, colorPreset, colorOptions))
+        })
+      }
+
+      if (!loadedRoot) {
+        return
+      }
+
+      if (!hasCompositeParts) {
+        applyLiveColorConfig(loadedRoot, 'full')
+        return
+      }
+
+      compositeParts.forEach((part, partIndex) => {
+        const partObject = loadedRoot.children[partIndex]
+        if (!partObject) {
+          return
+        }
+
+        applyLiveColorConfig(partObject, getTestHighPartRole(part.id, partIndex))
+      })
+    }
+
+    loadCompositeModelAsync()
+      .then(async ({ root, applyMaterials }) => {
+        if (isDisposed) {
+          return
+        }
+
+        loadedRoot = root
+        await applyMaterials()
+        if (isDisposed) {
+          return
+        }
+
+        const object3d = root
 
         const bounds = new THREE.Box3().setFromObject(object3d)
         const size = bounds.getSize(new THREE.Vector3())
@@ -670,10 +1388,34 @@ export default function ShipScene({ modelConfig }) {
           waterSurface.mesh.position.set(0, waterLevel, waterTuning.zOffset)
         }
 
+        if (isStudioLook) {
+          stageRoot.clear()
+
+          const shadowStageSize = Math.max(normalizedSize.x, normalizedSize.z) * 1.45
+          const shadowStage = new THREE.Mesh(
+            new THREE.PlaneGeometry(shadowStageSize, shadowStageSize),
+            new THREE.ShadowMaterial({
+              opacity: 0.84
+            })
+          )
+          shadowStage.rotation.x = -Math.PI / 2
+          shadowStage.position.set(0, centeredBounds.min.y + 0.008, 0)
+          shadowStage.receiveShadow = true
+          stageRoot.add(shadowStage)
+        }
+
         modelRoot.add(object3d)
+        setColorConfigRef.current(colorConfig)
+        setIsSceneLoading(false)
       })
       .catch((error) => {
+        if (isDisposed) {
+          return
+        }
+
         console.error(`Failed to load ${modelId}:`, error)
+        setSceneError('当前 3D 模型加载失败，请刷新后重试。')
+        setIsSceneLoading(false)
       })
 
     const resize = () => {
@@ -705,6 +1447,7 @@ export default function ShipScene({ modelConfig }) {
     renderLoop()
 
     return () => {
+      isDisposed = true
       window.cancelAnimationFrame(frameId)
       resizeObserver.disconnect()
       controls.dispose()
@@ -742,9 +1485,44 @@ export default function ShipScene({ modelConfig }) {
         waterSurface.material.dispose()
       }
 
+      stageRoot.traverse((child) => {
+        if (!child.isMesh) {
+          return
+        }
+
+        child.geometry?.dispose()
+        child.material?.dispose?.()
+      })
+
       renderer.dispose()
     }
-  }, [effectiveModelFormat, effectiveModelPath, isTwoLayerBoat, modelId, uvSets])
+  }, [
+    compositeParts,
+    effectiveModelFormat,
+    effectiveModelPath,
+    hasCompositeParts,
+    isStudioLook,
+    isTwoLayerBoat,
+    modelId,
+    overviewZoomScale,
+    shouldShowWaterSurface,
+    uvSets
+  ])
+
+  useEffect(() => {
+    setFocusTargetRef.current(focusTarget)
+    const nextFocusPreset = orderFocusPresets[focusTarget] ?? orderFocusPresets.overview
+    if (nextFocusPreset.type === 'interior') {
+      setActiveView('interior')
+      return
+    }
+
+    setActiveView('exterior')
+  }, [focusTarget])
+
+  useEffect(() => {
+    setColorConfigRef.current(colorConfig)
+  }, [colorConfig])
 
   const handleSwitchView = (mode) => {
     setActiveView(mode)
@@ -761,8 +1539,23 @@ export default function ShipScene({ modelConfig }) {
   }
 
   return (
-    <div className="scene-shell" aria-label="3D cargo vessel preview">
+    <div className={`scene-shell ${isStudioLook ? 'scene-shell-studio' : ''}`.trim()} aria-label="3D 船舶预览">
       <canvas className="webgl" ref={canvasRef} />
+      {(isSceneLoading || sceneError) && (
+        <div className="scene-status-overlay" aria-live="polite">
+          {sceneError ? (
+            <div className="scene-status-card scene-status-card-error">
+              <strong>场景未能正常加载</strong>
+              <span>{sceneError}</span>
+            </div>
+          ) : (
+            <div className="scene-status-card">
+              <strong>3D 场景加载中</strong>
+              <span>正在初始化模型与贴图资源…</span>
+            </div>
+          )}
+        </div>
+      )}
       <div className="canvas-view-toggle" aria-label="场景视角切换">
         <div className="interior-toggle-group">
           <button

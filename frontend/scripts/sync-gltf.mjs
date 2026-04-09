@@ -11,6 +11,7 @@ const sourceDir = path.resolve(repoRoot, 'gltf')
 // Vite 静态资源目标目录。
 const targetDir = path.resolve(frontendDir, 'public/gltf')
 const manifestPath = path.join(targetDir, 'asset-manifest.json')
+const textureAssignmentsPath = path.resolve(repoRoot, 'data', 'texture-assignments.json')
 
 // 仅同步与 3D 模型和贴图相关的文件类型。
 const allowedExtensions = new Set([
@@ -34,6 +35,14 @@ const modelExtensions = ['.glb', '.gltf', '.fbx', '.obj']
 const preferredModelFileNames = ['1.glb', '1.fbx', '2.glb', '2.fbx']
 const modelExtensionPriority = ['.glb', '.gltf', '.fbx', '.obj']
 const preferredPrimaryModelId = 'PleasureBoat1'
+const preferredCompositePartModelFileNames = {
+  TestHigh: {
+    '灯带+控制台（1024）': ['灯带+控制台（完整）.fbx', '灯带+控制台.glb'],
+    '船体+顶棚（2048）': ['船体+顶棚(整体).fbx', '船体+顶棚.glb'],
+    '船舱+栏杆+沙发（2048）': ['船舱+栏杆+沙发（完整）.fbx', '船舱+栏杆+沙发.glb'],
+    '马达（2048）': ['马达.fbx', '马达.glb']
+  }
+}
 
 const getPreferredModelFileNames = (modelId) => {
   if (modelId === 'Yacht') {
@@ -45,6 +54,13 @@ const getPreferredModelFileNames = (modelId) => {
   }
 
   return preferredModelFileNames.map((fileName) => fileName.toLowerCase())
+}
+
+const getPreferredCompositePartFileNames = (modelId, partId) => {
+  return (
+    preferredCompositePartModelFileNames[modelId]?.[partId]?.map((fileName) => fileName.toLowerCase()) ??
+    []
+  )
 }
 
 if (!fs.existsSync(sourceDir)) {
@@ -61,14 +77,47 @@ const toPosixPath = (value) => value.replace(/\\/g, '/')
 
 const toPublicAssetPath = (absolutePath) => `/gltf/${toPosixPath(path.relative(sourceDir, absolutePath))}`
 
-const classifyTexture = (fileName) => {
-  const normalizedName = fileName.toLowerCase()
+const readTextureAssignments = () => {
+  if (!fs.existsSync(textureAssignmentsPath)) {
+    return { updatedAt: new Date().toISOString(), files: {} }
+  }
 
-  if (normalizedName.includes('basecolor') || normalizedName.includes('base_color') || normalizedName.includes('albedo')) {
+  const raw = JSON.parse(fs.readFileSync(textureAssignmentsPath, 'utf8'))
+  const files = {}
+
+  for (const [relativePath, rawAssignment] of Object.entries(raw.files ?? {})) {
+    const normalizedPath = toPosixPath(relativePath).replace(/^\/+/, '')
+    const normalizedAssignment = normalizeTextureAssignment(rawAssignment)
+    if (!normalizedPath || !normalizedAssignment) {
+      continue
+    }
+
+    files[normalizedPath] = normalizedAssignment
+  }
+
+  return {
+    updatedAt: raw.updatedAt ?? new Date().toISOString(),
+    files
+  }
+}
+
+const classifyTexture = (fileName) => {
+  const normalizedName = fileName
+    .slice(0, fileName.length - path.extname(fileName).length)
+    .toLowerCase()
+    .replaceAll('-', '_')
+    .replaceAll(' ', '_')
+
+  if (
+    normalizedName.includes('basecolor') ||
+    normalizedName.includes('base_color') ||
+    normalizedName.includes('albedo') ||
+    normalizedName.includes('diffuse')
+  ) {
     return 'baseColor'
   }
 
-  if (normalizedName.includes('emissive')) {
+  if (normalizedName.includes('emissive') || normalizedName.includes('emission')) {
     return 'emissive'
   }
 
@@ -76,19 +125,87 @@ const classifyTexture = (fileName) => {
     return 'normal'
   }
 
-  if (normalizedName === 'ao.png' || normalizedName.startsWith('ao_') || normalizedName.includes('ambientocclusion')) {
+  if (
+    normalizedName === 'ao' ||
+    normalizedName.startsWith('ao_') ||
+    normalizedName.endsWith('_ao') ||
+    normalizedName.includes('ambientocclusion') ||
+    normalizedName.includes('ambient_occlusion') ||
+    normalizedName.includes('occlusion')
+  ) {
     return 'ao'
   }
 
-  if (normalizedName.includes('roughness') || normalizedName.startsWith('rou')) {
+  if (normalizedName.includes('roughness') || normalizedName.includes('rough')) {
     return 'roughness'
   }
 
-  if (normalizedName.includes('metallic') || normalizedName.includes('metalness') || normalizedName.startsWith('meti')) {
+  if (
+    normalizedName.includes('metallic') ||
+    normalizedName.includes('metalness') ||
+    normalizedName.includes('metal')
+  ) {
     return 'metalness'
   }
 
   return null
+}
+
+const canonicalTextureType = (value) => {
+  const normalizedValue = String(value ?? '').trim().toLowerCase()
+
+  switch (normalizedValue) {
+    case 'basecolor':
+    case 'base_color':
+    case 'base color':
+    case 'albedo':
+    case 'diffuse':
+      return 'baseColor'
+    case 'emissive':
+    case 'emission':
+      return 'emissive'
+    case 'normal':
+      return 'normal'
+    case 'ao':
+    case 'ambientocclusion':
+    case 'ambient_occlusion':
+    case 'occlusion':
+      return 'ao'
+    case 'metalness':
+    case 'metallic':
+    case 'metal':
+      return 'metalness'
+    case 'roughness':
+    case 'rough':
+      return 'roughness'
+    default:
+      return null
+  }
+}
+
+const normalizeTextureAssignment = (value) => {
+  const normalizedValue = String(value ?? '').trim().toLowerCase()
+  if (!normalizedValue || normalizedValue === 'auto') {
+    return null
+  }
+
+  if (normalizedValue === 'none') {
+    return 'none'
+  }
+
+  return canonicalTextureType(normalizedValue)
+}
+
+const resolveTextureType = (fileName, absolutePath, textureAssignments) => {
+  const sourceRelativePath = toPosixPath(path.relative(sourceDir, absolutePath))
+  const detectedType = classifyTexture(fileName)
+  const assignment = textureAssignments.files[sourceRelativePath] ?? null
+
+  if (assignment === 'none') {
+    return null
+  }
+
+  return assignment ?? detectedType
 }
 
 const inferMaterialNameHint = (fileNames) => {
@@ -103,6 +220,96 @@ const inferMaterialNameHint = (fileNames) => {
 }
 
 const listFiles = (dirPath) => fs.readdirSync(dirPath, { withFileTypes: true })
+
+const selectModelFileEntry = (entries, modelId, extraPreferredFileNames = []) => entries
+  .filter((entry) => entry.isFile() && modelExtensions.includes(path.extname(entry.name).toLowerCase()))
+  .slice()
+  .sort((left, right) => {
+    const localPreferredModelFileNames = [
+      ...extraPreferredFileNames.map((fileName) => fileName.toLowerCase()),
+      ...getPreferredModelFileNames(modelId)
+    ]
+    const leftName = left.name.toLowerCase()
+    const rightName = right.name.toLowerCase()
+    const leftPreferredIndex = localPreferredModelFileNames.indexOf(leftName)
+    const rightPreferredIndex = localPreferredModelFileNames.indexOf(rightName)
+
+    if (leftPreferredIndex !== rightPreferredIndex) {
+      if (leftPreferredIndex === -1) {
+        return 1
+      }
+
+      if (rightPreferredIndex === -1) {
+        return -1
+      }
+
+      return leftPreferredIndex - rightPreferredIndex
+    }
+
+    const leftExtIndex = modelExtensionPriority.indexOf(path.extname(left.name).toLowerCase())
+    const rightExtIndex = modelExtensionPriority.indexOf(path.extname(right.name).toLowerCase())
+    if (leftExtIndex !== rightExtIndex) {
+      return leftExtIndex - rightExtIndex
+    }
+
+    return leftName.localeCompare(rightName, 'en')
+  })[0]
+
+const buildUvSets = (modelId, modelDir, basePathSegments, textureAssignments) => {
+  const childEntries = listFiles(modelDir)
+
+  return childEntries
+    .filter((childEntry) => childEntry.isDirectory())
+    .sort((left, right) => left.name.localeCompare(right.name, 'en'))
+    .map((childEntry) => {
+      const uvDir = path.join(modelDir, childEntry.name)
+      const textures = {}
+      const textureFileNames = []
+
+      for (const textureEntry of listFiles(uvDir)) {
+        if (!textureEntry.isFile()) {
+          continue
+        }
+
+        const texturePath = path.join(uvDir, textureEntry.name)
+        const ext = path.extname(textureEntry.name).toLowerCase()
+        if (!allowedExtensions.has(ext)) {
+          continue
+        }
+
+        textureFileNames.push(textureEntry.name)
+
+        const textureType = resolveTextureType(textureEntry.name, texturePath, textureAssignments)
+        if (textureType) {
+          textures[textureType] = toPublicAssetPath(texturePath)
+        }
+      }
+
+      return {
+        id: childEntry.name,
+        label: `UV ${childEntry.name}`,
+        directory: `/gltf/${basePathSegments.map((segment) => toPosixPath(segment)).join('/')}/${childEntry.name}`,
+        materialNameHint: inferMaterialNameHint(textureFileNames),
+        textures
+      }
+    })
+}
+
+const buildSingleModelConfig = (modelId, modelDir, modelFileEntry, textureAssignments, basePathSegments = [modelId]) => {
+  const modelFilePath = path.join(modelDir, modelFileEntry.name)
+  const uvSets = buildUvSets(modelId, modelDir, basePathSegments, textureAssignments)
+
+  return {
+    id: modelId,
+    label: modelId,
+    model: {
+      format: path.extname(modelFileEntry.name).slice(1).toLowerCase(),
+      path: toPublicAssetPath(modelFilePath)
+    },
+    defaultUvSetId: uvSets[0]?.id ?? null,
+    uvSets
+  }
+}
 
 const copySupportedAssets = (fromDir, toDir) => {
   const entries = listFiles(fromDir)
@@ -129,6 +336,7 @@ const copySupportedAssets = (fromDir, toDir) => {
 }
 
 const buildModelManifest = () => {
+  const textureAssignments = readTextureAssignments()
   const topLevelEntries = listFiles(sourceDir)
   const models = []
 
@@ -139,95 +347,53 @@ const buildModelManifest = () => {
 
     const modelDir = path.join(sourceDir, entry.name)
     const childEntries = listFiles(modelDir)
-    const modelFileCandidates = childEntries.filter((childEntry) => {
-      if (!childEntry.isFile()) {
-        return false
-      }
+    const modelFileEntry = selectModelFileEntry(childEntries, entry.name)
 
-      return modelExtensions.includes(path.extname(childEntry.name).toLowerCase())
-    })
-
-    const modelFileEntry = modelFileCandidates
-      .slice()
-      .sort((left, right) => {
-        const localPreferredModelFileNames = getPreferredModelFileNames(entry.name)
-        const leftName = left.name.toLowerCase()
-        const rightName = right.name.toLowerCase()
-        const leftPreferredIndex = localPreferredModelFileNames.indexOf(leftName)
-        const rightPreferredIndex = localPreferredModelFileNames.indexOf(rightName)
-
-        if (leftPreferredIndex !== rightPreferredIndex) {
-          if (leftPreferredIndex === -1) {
-            return 1
-          }
-
-          if (rightPreferredIndex === -1) {
-            return -1
-          }
-
-          return leftPreferredIndex - rightPreferredIndex
-        }
-
-        const leftExtIndex = modelExtensionPriority.indexOf(path.extname(left.name).toLowerCase())
-        const rightExtIndex = modelExtensionPriority.indexOf(path.extname(right.name).toLowerCase())
-        if (leftExtIndex !== rightExtIndex) {
-          return leftExtIndex - rightExtIndex
-        }
-
-        return leftName.localeCompare(rightName, 'en')
-      })[0]
-
-    if (!modelFileEntry) {
+    if (modelFileEntry) {
+      models.push(buildSingleModelConfig(entry.name, modelDir, modelFileEntry, textureAssignments))
       continue
     }
 
-    const modelFilePath = path.join(modelDir, modelFileEntry.name)
-    const uvSets = childEntries
+    const partConfigs = childEntries
       .filter((childEntry) => childEntry.isDirectory())
       .sort((left, right) => left.name.localeCompare(right.name, 'en'))
       .map((childEntry) => {
-        const uvDir = path.join(modelDir, childEntry.name)
-        const textures = {}
-        const textureFileNames = []
+        const partDir = path.join(modelDir, childEntry.name)
+        const partEntries = listFiles(partDir)
+        const partModelFileEntry = selectModelFileEntry(
+          partEntries,
+          entry.name,
+          [
+            ...getPreferredCompositePartFileNames(entry.name, childEntry.name),
+            `${childEntry.name}.glb`,
+            `${childEntry.name}.fbx`,
+            `${childEntry.name}.gltf`
+          ]
+        )
 
-        for (const textureEntry of listFiles(uvDir)) {
-          if (!textureEntry.isFile()) {
-            continue
-          }
-
-          const texturePath = path.join(uvDir, textureEntry.name)
-          const ext = path.extname(textureEntry.name).toLowerCase()
-          if (!allowedExtensions.has(ext)) {
-            continue
-          }
-
-          textureFileNames.push(textureEntry.name)
-
-          const textureType = classifyTexture(textureEntry.name)
-          if (textureType) {
-            textures[textureType] = toPublicAssetPath(texturePath)
-            continue
-          }
+        if (!partModelFileEntry) {
+          return null
         }
 
         return {
+          ...buildSingleModelConfig(entry.name, partDir, partModelFileEntry, textureAssignments, [entry.name, childEntry.name]),
           id: childEntry.name,
-          label: `UV ${childEntry.name}`,
-          directory: `/gltf/${entry.name}/${childEntry.name}`,
-          materialNameHint: inferMaterialNameHint(textureFileNames),
-          textures
+          label: childEntry.name
         }
       })
+      .filter(Boolean)
+
+    if (partConfigs.length === 0) {
+      continue
+    }
 
     models.push({
       id: entry.name,
       label: entry.name,
-      model: {
-        format: path.extname(modelFileEntry.name).slice(1).toLowerCase(),
-        path: toPublicAssetPath(modelFilePath)
-      },
-      defaultUvSetId: uvSets[0]?.id ?? null,
-      uvSets
+      model: partConfigs[0].model,
+      defaultUvSetId: null,
+      uvSets: [],
+      parts: partConfigs
     })
   }
 

@@ -42,11 +42,19 @@ type ScenePayload struct {
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
+	app, err := newApp()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", healthHandler)
 	mux.HandleFunc("/api/time", timeHandler)
 	mux.HandleFunc("/api/scene/basic", basicSceneHandler)
 	mux.HandleFunc("/api/scene/random", randomSceneHandler)
+	app.registerAdminRoutes(mux)
+	app.registerContentRoutes(mux)
+	app.registerFrontendRoutes(mux)
 
 	server := &http.Server{
 		Addr:         ":8080",
@@ -56,7 +64,7 @@ func main() {
 		IdleTimeout:  30 * time.Second,
 	}
 
-	log.Println("Go backend is running at http://localhost:8080")
+	log.Println("Go server is running at http://localhost:8080")
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
@@ -163,7 +171,7 @@ func writeJSON(w http.ResponseWriter, status int, data any) {
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 		if r.Method == http.MethodOptions {
