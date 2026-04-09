@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-03-24T16:57:53.317Z",
+  "generatedAt": "2026-04-09T04:30:13.822Z",
   "source": {
     "assetRoot": "../gltf",
     "publicRoot": "public/gltf"
@@ -26,8 +26,7 @@
             "emissive": "/gltf/PleasureBoat/tietu/316-2_01 - Default_Emissive.png",
             "normal": "/gltf/PleasureBoat/tietu/316-2_01 - Default_Normal.png",
             "ao": "/gltf/PleasureBoat/tietu/ao.png",
-            "metalness": "/gltf/PleasureBoat/tietu/metallic.png",
-            "roughness": "/gltf/PleasureBoat/tietu/rou.png"
+            "metalness": "/gltf/PleasureBoat/tietu/metallic.png"
           }
         }
       ]
@@ -54,6 +53,114 @@
             "roughness": "/gltf/PleasureBoat1/tt/11_01 - Default_Roughness.png",
             "ao": "/gltf/PleasureBoat1/tt/ao.png"
           }
+        }
+      ]
+    },
+    {
+      "id": "TestHigh",
+      "label": "TestHigh",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/TestHigh/灯带+控制台（1024）/灯带+控制台（完整）.fbx"
+      },
+      "defaultUvSetId": null,
+      "uvSets": [],
+      "parts": [
+        {
+          "id": "灯带+控制台（1024）",
+          "label": "灯带+控制台（1024）",
+          "model": {
+            "format": "fbx",
+            "path": "/gltf/TestHigh/灯带+控制台（1024）/灯带+控制台（完整）.fbx"
+          },
+          "defaultUvSetId": "TT",
+          "uvSets": [
+            {
+              "id": "TT",
+              "label": "UV TT",
+              "directory": "/gltf/TestHigh/灯带+控制台（1024）/TT",
+              "materialNameHint": "M_01___Default",
+              "textures": {
+                "ao": "/gltf/TestHigh/灯带+控制台（1024）/TT/AO.png",
+                "baseColor": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_BaseColor.png",
+                "emissive": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_Emissive.png",
+                "metalness": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_Metallic.png",
+                "normal": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_Normal.png",
+                "roughness": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_Roughness.png"
+              }
+            }
+          ]
+        },
+        {
+          "id": "船体+顶棚（2048）",
+          "label": "船体+顶棚（2048）",
+          "model": {
+            "format": "fbx",
+            "path": "/gltf/TestHigh/船体+顶棚（2048）/船体+顶棚(整体).fbx"
+          },
+          "defaultUvSetId": "tt",
+          "uvSets": [
+            {
+              "id": "tt",
+              "label": "UV tt",
+              "directory": "/gltf/TestHigh/船体+顶棚（2048）/tt",
+              "materialNameHint": "M_01___Default",
+              "textures": {
+                "ao": "/gltf/TestHigh/船体+顶棚（2048）/tt/AO.png",
+                "baseColor": "/gltf/TestHigh/船体+顶棚（2048）/tt/船体+顶棚(UV)_01 - Default_BaseColor.png",
+                "metalness": "/gltf/TestHigh/船体+顶棚（2048）/tt/船体+顶棚(UV)_01 - Default_Metallic.png",
+                "normal": "/gltf/TestHigh/船体+顶棚（2048）/tt/船体+顶棚(UV)_01 - Default_Normal.png",
+                "roughness": "/gltf/TestHigh/船体+顶棚（2048）/tt/船体+顶棚(UV)_01 - Default_Roughness.png"
+              }
+            }
+          ]
+        },
+        {
+          "id": "船舱+栏杆+沙发（2048）",
+          "label": "船舱+栏杆+沙发（2048）",
+          "model": {
+            "format": "fbx",
+            "path": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/船舱+栏杆+沙发（完整）.fbx"
+          },
+          "defaultUvSetId": "tt",
+          "uvSets": [
+            {
+              "id": "tt",
+              "label": "UV tt",
+              "directory": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt",
+              "materialNameHint": "M_01___Default",
+              "textures": {
+                "baseColor": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/1_01 - Default_BaseColor.png",
+                "metalness": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/1_01 - Default_Metallic.png",
+                "normal": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/1_01 - Default_Normal.png",
+                "roughness": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/1_01 - Default_Roughness.png",
+                "ao": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/AO.png"
+              }
+            }
+          ]
+        },
+        {
+          "id": "马达（2048）",
+          "label": "马达（2048）",
+          "model": {
+            "format": "fbx",
+            "path": "/gltf/TestHigh/马达（2048）/马达.fbx"
+          },
+          "defaultUvSetId": "tt",
+          "uvSets": [
+            {
+              "id": "tt",
+              "label": "UV tt",
+              "directory": "/gltf/TestHigh/马达（2048）/tt",
+              "materialNameHint": "M_07___Default",
+              "textures": {
+                "baseColor": "/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_BaseColor.png",
+                "metalness": "/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Metallic.png",
+                "normal": "/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Normal.png",
+                "roughness": "/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Roughness.png"
+              }
+            }
+          ]
         }
       ]
     },
@@ -85,9 +192,7 @@
             "baseColor": "/gltf/TwoLayerBoat/1/1_01 - Default_BaseColor.png",
             "emissive": "/gltf/TwoLayerBoat/1/1_01 - Default_Emissive.png",
             "normal": "/gltf/TwoLayerBoat/1/1_01 - Default_Normal.png",
-            "ao": "/gltf/TwoLayerBoat/1/AO.png",
-            "metalness": "/gltf/TwoLayerBoat/1/meti.png",
-            "roughness": "/gltf/TwoLayerBoat/1/rou.png"
+            "ao": "/gltf/TwoLayerBoat/1/AO.png"
           }
         },
         {
@@ -98,9 +203,7 @@
           "textures": {
             "baseColor": "/gltf/TwoLayerBoat/2/1_02 - Default_BaseColor.png",
             "normal": "/gltf/TwoLayerBoat/2/1_02 - Default_Normal.png",
-            "ao": "/gltf/TwoLayerBoat/2/AO_3.png",
-            "metalness": "/gltf/TwoLayerBoat/2/meti_1.png",
-            "roughness": "/gltf/TwoLayerBoat/2/rou_2.png"
+            "ao": "/gltf/TwoLayerBoat/2/AO_3.png"
           }
         }
       ]
