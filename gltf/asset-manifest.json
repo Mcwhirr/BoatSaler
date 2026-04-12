@@ -1,0 +1,313 @@
+{
+  "version": 1,
+  "generatedAt": "2026-04-12T06:35:22.660Z",
+  "source": {
+    "assetRoot": "../gltf",
+    "publicRoot": "public/gltf"
+  },
+  "primaryModelId": "PleasureBoat1",
+  "models": [
+    {
+      "id": "Cabnet",
+      "label": "Cabnet",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/Cabnet/119B.fbx"
+      },
+      "defaultUvSetId": "tt",
+      "uvSets": [
+        {
+          "id": "tt",
+          "label": "UV tt",
+          "directory": "/gltf/Cabnet/tt",
+          "materialNameHint": "M_01___Default",
+          "textures": {
+            "baseColor": "/gltf/Cabnet/tt/119_01 - Default_BaseColor.png",
+            "emissive": "/gltf/Cabnet/tt/119_01 - Default_Emissive.png",
+            "metalness": "/gltf/Cabnet/tt/119_01 - Default_Metallic.png",
+            "normal": "/gltf/Cabnet/tt/119_01 - Default_Normal.png",
+            "roughness": "/gltf/Cabnet/tt/119_01 - Default_Roughness.png",
+            "ao": "/gltf/Cabnet/tt/ao.png"
+          }
+        }
+      ]
+    },
+    {
+      "id": "FireFighting",
+      "label": "FireFighting",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/FireFighting/13.fbx"
+      },
+      "defaultUvSetId": "tt/cc",
+      "uvSets": [
+        {
+          "id": "tt/cc",
+          "label": "UV tt/cc",
+          "directory": "/gltf/FireFighting/tt/cc",
+          "materialNameHint": "M_01___Default",
+          "textures": {
+            "ao": "/gltf/FireFighting/tt/cc/ao.png",
+            "baseColor": "/gltf/FireFighting/tt/cc/cc_01 - Default_BaseColor.png",
+            "metalness": "/gltf/FireFighting/tt/cc/cc_01 - Default_Metallic.png",
+            "normal": "/gltf/FireFighting/tt/cc/cc_01 - Default_Normal.png",
+            "roughness": "/gltf/FireFighting/tt/cc/cc_01 - Default_Roughness.png"
+          }
+        },
+        {
+          "id": "tt/diban",
+          "label": "UV tt/diban",
+          "directory": "/gltf/FireFighting/tt/diban",
+          "materialNameHint": "M_03___Default",
+          "textures": {
+            "ao": "/gltf/FireFighting/tt/diban/ao.png",
+            "baseColor": "/gltf/FireFighting/tt/diban/diban_03 - Default_BaseColor.png",
+            "metalness": "/gltf/FireFighting/tt/diban/diban_03 - Default_Metallic.png",
+            "normal": "/gltf/FireFighting/tt/diban/diban_03 - Default_Normal.png",
+            "roughness": "/gltf/FireFighting/tt/diban/diban_03 - Default_Roughness.png"
+          }
+        },
+        {
+          "id": "tt/langan",
+          "label": "UV tt/langan",
+          "directory": "/gltf/FireFighting/tt/langan",
+          "materialNameHint": "M_02___Default",
+          "textures": {
+            "baseColor": "/gltf/FireFighting/tt/langan/alngan_02 - Default_BaseColor.png",
+            "emissive": "/gltf/FireFighting/tt/langan/alngan_02 - Default_Emissive.png",
+            "metalness": "/gltf/FireFighting/tt/langan/alngan_02 - Default_Metallic.png",
+            "normal": "/gltf/FireFighting/tt/langan/alngan_02 - Default_Normal.png",
+            "roughness": "/gltf/FireFighting/tt/langan/alngan_02 - Default_Roughness.png",
+            "ao": "/gltf/FireFighting/tt/langan/ao.png"
+          }
+        }
+      ]
+    },
+    {
+      "id": "PleasureBoat",
+      "label": "PleasureBoat",
+      "model": {
+        "format": "glb",
+        "path": "/gltf/PleasureBoat/PleasureBoat.glb"
+      },
+      "defaultUvSetId": "tietu",
+      "uvSets": [
+        {
+          "id": "tietu",
+          "label": "UV tietu",
+          "directory": "/gltf/PleasureBoat/tietu",
+          "materialNameHint": "M_01___Default",
+          "textures": {
+            "baseColor": "/gltf/PleasureBoat/tietu/316-2_01 - Default_BaseColor.png",
+            "emissive": "/gltf/PleasureBoat/tietu/316-2_01 - Default_Emissive.png",
+            "normal": "/gltf/PleasureBoat/tietu/316-2_01 - Default_Normal.png",
+            "ao": "/gltf/PleasureBoat/tietu/ao.png",
+            "metalness": "/gltf/PleasureBoat/tietu/metallic.png"
+          }
+        }
+      ]
+    },
+    {
+      "id": "PleasureBoat1",
+      "label": "PleasureBoat1",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/PleasureBoat1/11.fbx"
+      },
+      "defaultUvSetId": "tt",
+      "uvSets": [
+        {
+          "id": "tt",
+          "label": "UV tt",
+          "directory": "/gltf/PleasureBoat1/tt",
+          "materialNameHint": "M_01___Default",
+          "textures": {
+            "baseColor": "/gltf/PleasureBoat1/tt/11_01 - Default_BaseColor.png",
+            "emissive": "/gltf/PleasureBoat1/tt/11_01 - Default_Emissive.png",
+            "metalness": "/gltf/PleasureBoat1/tt/11_01 - Default_Metallic.png",
+            "normal": "/gltf/PleasureBoat1/tt/11_01 - Default_Normal.png",
+            "roughness": "/gltf/PleasureBoat1/tt/11_01 - Default_Roughness.png",
+            "ao": "/gltf/PleasureBoat1/tt/ao.png"
+          }
+        }
+      ]
+    },
+    {
+      "id": "TestHigh",
+      "label": "TestHigh",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/TestHigh/灯带+控制台（1024）/灯带+控制台（完整）.fbx"
+      },
+      "defaultUvSetId": null,
+      "uvSets": [],
+      "parts": [
+        {
+          "id": "灯带+控制台（1024）",
+          "label": "灯带+控制台（1024）",
+          "model": {
+            "format": "fbx",
+            "path": "/gltf/TestHigh/灯带+控制台（1024）/灯带+控制台（完整）.fbx"
+          },
+          "defaultUvSetId": "TT",
+          "uvSets": [
+            {
+              "id": "TT",
+              "label": "UV TT",
+              "directory": "/gltf/TestHigh/灯带+控制台（1024）/TT",
+              "materialNameHint": "M_01___Default",
+              "textures": {
+                "ao": "/gltf/TestHigh/灯带+控制台（1024）/TT/AO.png",
+                "baseColor": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_BaseColor.png",
+                "emissive": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_Emissive.png",
+                "metalness": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_Metallic.png",
+                "normal": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_Normal.png",
+                "roughness": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_Roughness.png"
+              }
+            }
+          ]
+        },
+        {
+          "id": "船体+顶棚（2048）",
+          "label": "船体+顶棚（2048）",
+          "model": {
+            "format": "fbx",
+            "path": "/gltf/TestHigh/船体+顶棚（2048）/船体+顶棚(整体).fbx"
+          },
+          "defaultUvSetId": "tt",
+          "uvSets": [
+            {
+              "id": "tt",
+              "label": "UV tt",
+              "directory": "/gltf/TestHigh/船体+顶棚（2048）/tt",
+              "materialNameHint": "M_01___Default",
+              "textures": {
+                "ao": "/gltf/TestHigh/船体+顶棚（2048）/tt/AO.png",
+                "baseColor": "/gltf/TestHigh/船体+顶棚（2048）/tt/船体+顶棚(UV)_01 - Default_BaseColor.png",
+                "metalness": "/gltf/TestHigh/船体+顶棚（2048）/tt/船体+顶棚(UV)_01 - Default_Metallic.png",
+                "normal": "/gltf/TestHigh/船体+顶棚（2048）/tt/船体+顶棚(UV)_01 - Default_Normal.png",
+                "roughness": "/gltf/TestHigh/船体+顶棚（2048）/tt/船体+顶棚(UV)_01 - Default_Roughness.png"
+              }
+            }
+          ]
+        },
+        {
+          "id": "船舱+栏杆+沙发（2048）",
+          "label": "船舱+栏杆+沙发（2048）",
+          "model": {
+            "format": "fbx",
+            "path": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/船舱+栏杆+沙发（完整）.fbx"
+          },
+          "defaultUvSetId": "tt",
+          "uvSets": [
+            {
+              "id": "tt",
+              "label": "UV tt",
+              "directory": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt",
+              "materialNameHint": "M_01___Default",
+              "textures": {
+                "baseColor": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/1_01 - Default_BaseColor.png",
+                "metalness": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/1_01 - Default_Metallic.png",
+                "normal": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/1_01 - Default_Normal.png",
+                "roughness": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/1_01 - Default_Roughness.png",
+                "ao": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/AO.png"
+              }
+            }
+          ]
+        },
+        {
+          "id": "马达（2048）",
+          "label": "马达（2048）",
+          "model": {
+            "format": "fbx",
+            "path": "/gltf/TestHigh/马达（2048）/马达.fbx"
+          },
+          "defaultUvSetId": "tt",
+          "uvSets": [
+            {
+              "id": "tt",
+              "label": "UV tt",
+              "directory": "/gltf/TestHigh/马达（2048）/tt",
+              "materialNameHint": "M_07___Default",
+              "textures": {
+                "baseColor": "/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_BaseColor.png",
+                "metalness": "/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Metallic.png",
+                "normal": "/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Normal.png",
+                "roughness": "/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Roughness.png"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TestModel",
+      "label": "TestModel",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/TestModel/ddd.fbx"
+      },
+      "defaultUvSetId": null,
+      "uvSets": []
+    },
+    {
+      "id": "TwoLayerBoat",
+      "label": "TwoLayerBoat",
+      "model": {
+        "format": "glb",
+        "path": "/gltf/TwoLayerBoat/TwoLayerBoat.glb"
+      },
+      "defaultUvSetId": "1",
+      "uvSets": [
+        {
+          "id": "1",
+          "label": "UV 1",
+          "directory": "/gltf/TwoLayerBoat/1",
+          "materialNameHint": "M_01___Default",
+          "textures": {
+            "baseColor": "/gltf/TwoLayerBoat/1/1_01 - Default_BaseColor.png",
+            "emissive": "/gltf/TwoLayerBoat/1/1_01 - Default_Emissive.png",
+            "normal": "/gltf/TwoLayerBoat/1/1_01 - Default_Normal.png",
+            "ao": "/gltf/TwoLayerBoat/1/AO.png"
+          }
+        },
+        {
+          "id": "2",
+          "label": "UV 2",
+          "directory": "/gltf/TwoLayerBoat/2",
+          "materialNameHint": "M_02___Default",
+          "textures": {
+            "baseColor": "/gltf/TwoLayerBoat/2/1_02 - Default_BaseColor.png",
+            "normal": "/gltf/TwoLayerBoat/2/1_02 - Default_Normal.png",
+            "ao": "/gltf/TwoLayerBoat/2/AO_3.png"
+          }
+        }
+      ]
+    },
+    {
+      "id": "Yacht",
+      "label": "Yacht",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/Yacht/950.fbx"
+      },
+      "defaultUvSetId": "tt",
+      "uvSets": [
+        {
+          "id": "tt",
+          "label": "UV tt",
+          "directory": "/gltf/Yacht/tt",
+          "materialNameHint": "M_01___Default",
+          "textures": {
+            "baseColor": "/gltf/Yacht/tt/950_01 - Default_BaseColor.png",
+            "emissive": "/gltf/Yacht/tt/950_01 - Default_Emissive.png",
+            "metalness": "/gltf/Yacht/tt/950_01 - Default_Metallic.png",
+            "normal": "/gltf/Yacht/tt/950_01 - Default_Normal.png",
+            "roughness": "/gltf/Yacht/tt/950_01 - Default_Roughness.png",
+            "ao": "/gltf/Yacht/tt/AO.png"
+          }
+        }
+      ]
+    }
+  ]
+}
