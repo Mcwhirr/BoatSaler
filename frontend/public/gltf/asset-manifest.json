@@ -1,12 +1,88 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-09T04:30:13.822Z",
+  "generatedAt": "2026-04-12T06:21:56.668Z",
   "source": {
     "assetRoot": "../gltf",
     "publicRoot": "public/gltf"
   },
   "primaryModelId": "PleasureBoat1",
   "models": [
+    {
+      "id": "Cabnet",
+      "label": "Cabnet",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/Cabnet/119B.fbx"
+      },
+      "defaultUvSetId": "tt",
+      "uvSets": [
+        {
+          "id": "tt",
+          "label": "UV tt",
+          "directory": "/gltf/Cabnet/tt",
+          "materialNameHint": "M_01___Default",
+          "textures": {
+            "baseColor": "/gltf/Cabnet/tt/119_01 - Default_BaseColor.png",
+            "emissive": "/gltf/Cabnet/tt/119_01 - Default_Emissive.png",
+            "metalness": "/gltf/Cabnet/tt/119_01 - Default_Metallic.png",
+            "normal": "/gltf/Cabnet/tt/119_01 - Default_Normal.png",
+            "roughness": "/gltf/Cabnet/tt/119_01 - Default_Roughness.png",
+            "ao": "/gltf/Cabnet/tt/ao.png"
+          }
+        }
+      ]
+    },
+    {
+      "id": "FireFighting",
+      "label": "FireFighting",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/FireFighting/13.fbx"
+      },
+      "defaultUvSetId": "tt/cc",
+      "uvSets": [
+        {
+          "id": "tt/cc",
+          "label": "UV tt/cc",
+          "directory": "/gltf/FireFighting/tt/cc",
+          "materialNameHint": "M_01___Default",
+          "textures": {
+            "ao": "/gltf/FireFighting/tt/cc/ao.png",
+            "baseColor": "/gltf/FireFighting/tt/cc/cc_01 - Default_BaseColor.png",
+            "metalness": "/gltf/FireFighting/tt/cc/cc_01 - Default_Metallic.png",
+            "normal": "/gltf/FireFighting/tt/cc/cc_01 - Default_Normal.png",
+            "roughness": "/gltf/FireFighting/tt/cc/cc_01 - Default_Roughness.png"
+          }
+        },
+        {
+          "id": "tt/diban",
+          "label": "UV tt/diban",
+          "directory": "/gltf/FireFighting/tt/diban",
+          "materialNameHint": "M_03___Default",
+          "textures": {
+            "ao": "/gltf/FireFighting/tt/diban/ao.png",
+            "baseColor": "/gltf/FireFighting/tt/diban/diban_03 - Default_BaseColor.png",
+            "metalness": "/gltf/FireFighting/tt/diban/diban_03 - Default_Metallic.png",
+            "normal": "/gltf/FireFighting/tt/diban/diban_03 - Default_Normal.png",
+            "roughness": "/gltf/FireFighting/tt/diban/diban_03 - Default_Roughness.png"
+          }
+        },
+        {
+          "id": "tt/langan",
+          "label": "UV tt/langan",
+          "directory": "/gltf/FireFighting/tt/langan",
+          "materialNameHint": "M_02___Default",
+          "textures": {
+            "baseColor": "/gltf/FireFighting/tt/langan/alngan_02 - Default_BaseColor.png",
+            "emissive": "/gltf/FireFighting/tt/langan/alngan_02 - Default_Emissive.png",
+            "metalness": "/gltf/FireFighting/tt/langan/alngan_02 - Default_Metallic.png",
+            "normal": "/gltf/FireFighting/tt/langan/alngan_02 - Default_Normal.png",
+            "roughness": "/gltf/FireFighting/tt/langan/alngan_02 - Default_Roughness.png",
+            "ao": "/gltf/FireFighting/tt/langan/ao.png"
+          }
+        }
+      ]
+    },
     {
       "id": "PleasureBoat",
       "label": "PleasureBoat",

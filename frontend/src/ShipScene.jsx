@@ -3,7 +3,6 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 
 function updateOrthographicFrustum(camera, aspect, frustumHeight) {
   const safeAspect = Math.max(aspect, 0.01)
@@ -173,6 +172,74 @@ function createWaterSurface() {
   mesh.position.set(0, -0.8, 0.2)
 
   return { mesh, material, geometry }
+}
+
+function createReflectionEnvironmentScene() {
+  const environmentScene = new THREE.Scene()
+  const disposables = []
+
+  const registerMesh = (geometry, material, transform) => {
+    const mesh = new THREE.Mesh(geometry, material)
+    transform(mesh)
+    environmentScene.add(mesh)
+    disposables.push(geometry, material)
+    return mesh
+  }
+
+  registerMesh(
+    new THREE.SphereGeometry(14, 48, 24),
+    new THREE.MeshBasicMaterial({
+      color: new THREE.Color('#bcd3ea'),
+      side: THREE.BackSide
+    }),
+    (mesh) => {
+      mesh.scale.set(1, 0.88, 1)
+    }
+  )
+
+  registerMesh(
+    new THREE.PlaneGeometry(20, 10),
+    new THREE.MeshBasicMaterial({ color: new THREE.Color('#d7e6f5') }),
+    (mesh) => {
+      mesh.position.set(-6.4, 2.2, 1.8)
+      mesh.rotation.y = Math.PI / 2.55
+    }
+  )
+
+  registerMesh(
+    new THREE.PlaneGeometry(18, 9),
+    new THREE.MeshBasicMaterial({ color: new THREE.Color('#edf4fb') }),
+    (mesh) => {
+      mesh.position.set(5.6, 2.8, -2.6)
+      mesh.rotation.y = -Math.PI / 2.2
+    }
+  )
+
+  registerMesh(
+    new THREE.CircleGeometry(1.2, 48),
+    new THREE.MeshBasicMaterial({ color: new THREE.Color('#ffe2b8') }),
+    (mesh) => {
+      mesh.position.set(-3.8, 4.6, 2.4)
+      mesh.lookAt(0, 0.8, 0)
+    }
+  )
+
+  registerMesh(
+    new THREE.PlaneGeometry(22, 14),
+    new THREE.MeshBasicMaterial({ color: new THREE.Color('#5d6f7e') }),
+    (mesh) => {
+      mesh.position.set(0, -2.8, 0.4)
+      mesh.rotation.x = -Math.PI / 2
+    }
+  )
+
+  return {
+    scene: environmentScene,
+    dispose: () => {
+      disposables.forEach((resource) => resource.dispose?.())
+      environmentScene.clear()
+    }
+  }
 }
 
 function getOrderFocusPresets(modelId) {
@@ -459,9 +526,16 @@ export default function ShipScene({
     let activeCamera = exteriorCamera
     cameraRef.current = activeCamera
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, isStudioLook ? 0.72 : 1.5)
-    const keyLight = new THREE.DirectionalLight(0xffffff, isStudioLook ? 2.35 : 1.55)
-    keyLight.position.set(...(isStudioLook ? [5.4, 3.5, 4.8] : [4.2, 2.4, 3.4]))
+    const ambientLight = new THREE.HemisphereLight(
+      new THREE.Color(isStudioLook ? '#dde8f6' : '#bfd9f2'),
+      new THREE.Color(isStudioLook ? '#32251c' : '#52606c'),
+      isStudioLook ? 0.62 : 1.02
+    )
+    const keyLight = new THREE.DirectionalLight(
+      new THREE.Color(isStudioLook ? '#fff1de' : '#ffd7ab'),
+      isStudioLook ? 2.05 : 1.18
+    )
+    keyLight.position.set(...(isStudioLook ? [5.4, 3.5, 4.8] : [6.8, 4.6, 2.2]))
     keyLight.target = modelRoot
     keyLight.castShadow = true
     keyLight.shadow.mapSize.set(2048, 2048)
@@ -473,29 +547,6 @@ export default function ShipScene({
     keyLight.shadow.camera.right = 8
     keyLight.shadow.camera.top = 8
     keyLight.shadow.camera.bottom = -8
-    const fillLight = new THREE.DirectionalLight(
-      isStudioLook ? new THREE.Color('#f5f7fa') : new THREE.Color('#ffffff'),
-      isStudioLook ? 0 : 1.05
-    )
-    fillLight.position.set(...(isStudioLook ? [-5.2, 2.4, 3.3] : [-4.5, 4.2, -3.5]))
-    const rimLight = new THREE.DirectionalLight(
-      new THREE.Color(isStudioLook ? '#ffffff' : '#ffffff'),
-      isStudioLook ? 0 : 0.4
-    )
-    rimLight.position.set(-2.8, 1.2, -5.5)
-    const topLight = new THREE.DirectionalLight(0xffffff, isStudioLook ? 0 : 0.35)
-    topLight.position.set(0.5, 6.4, 1.2)
-    topLight.target = modelRoot
-    topLight.castShadow = true
-    topLight.shadow.mapSize.set(1024, 1024)
-    topLight.shadow.bias = -0.00015
-    topLight.shadow.normalBias = 0.02
-    topLight.shadow.camera.near = 0.5
-    topLight.shadow.camera.far = 22
-    topLight.shadow.camera.left = -7
-    topLight.shadow.camera.right = 7
-    topLight.shadow.camera.top = 7
-    topLight.shadow.camera.bottom = -7
     const underGlowLight = new THREE.PointLight(
       new THREE.Color(isStudioLook ? '#72f6ff' : '#ffffff'),
       isStudioLook ? 0 : 0,
@@ -503,7 +554,7 @@ export default function ShipScene({
       2
     )
     underGlowLight.position.set(0.2, -0.55, 1.1)
-    scene.add(ambientLight, keyLight, fillLight, rimLight, topLight, underGlowLight)
+    scene.add(ambientLight, keyLight, underGlowLight)
 
     if (waterSurface) {
       waterRoot.add(waterSurface.mesh)
@@ -514,12 +565,13 @@ export default function ShipScene({
     renderer.setClearColor('#010203', 1)
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.toneMappingExposure = isStudioLook ? 0.94 : 1.1
+    renderer.toneMappingExposure = isStudioLook ? 0.92 : 0.94
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
     const pmremGenerator = new THREE.PMREMGenerator(renderer)
-    const environmentTexture = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture
+    const reflectionEnvironment = createReflectionEnvironmentScene()
+    const environmentTexture = pmremGenerator.fromScene(reflectionEnvironment.scene, 0.02).texture
     scene.environment = environmentTexture
 
     const controls = new OrbitControls(exteriorCamera, canvas)
@@ -734,7 +786,7 @@ export default function ShipScene({
         fog: material?.fog ?? true,
         metalness: 'metalness' in (material ?? {}) ? material.metalness : 0.22,
         roughness: 'roughness' in (material ?? {}) ? material.roughness : 0.42,
-        envMapIntensity: 1.9
+        envMapIntensity: 1.28
       })
 
       if (material?.map) {
@@ -762,6 +814,56 @@ export default function ShipScene({
       return upgradedMaterial
     }
 
+    const createPhysicalMaterial = (material) => {
+      const upgradedMaterial = new THREE.MeshPhysicalMaterial({
+        name: material?.name || '',
+        color: material?.color?.clone?.() ?? new THREE.Color('#ffffff'),
+        emissive: material?.emissive?.clone?.() ?? new THREE.Color('#000000'),
+        emissiveIntensity: material?.emissiveIntensity ?? 1,
+        opacity: material?.opacity ?? 1,
+        transparent: material?.transparent ?? false,
+        side: material?.side ?? THREE.FrontSide,
+        alphaTest: material?.alphaTest ?? 0,
+        depthWrite: material?.depthWrite ?? true,
+        depthTest: material?.depthTest ?? true,
+        wireframe: material?.wireframe ?? false,
+        flatShading: material?.flatShading ?? false,
+        fog: material?.fog ?? true,
+        metalness: 'metalness' in (material ?? {}) ? material.metalness : 0.24,
+        roughness: 'roughness' in (material ?? {}) ? material.roughness : 0.34,
+        envMapIntensity: material?.envMapIntensity ?? 1.52,
+        clearcoat: material?.clearcoat ?? 0,
+        clearcoatRoughness: material?.clearcoatRoughness ?? 0.08
+      })
+
+      if (material?.map) {
+        upgradedMaterial.map = material.map
+      }
+      if (material?.normalMap) {
+        upgradedMaterial.normalMap = material.normalMap
+      }
+      if (material?.aoMap) {
+        upgradedMaterial.aoMap = material.aoMap
+      }
+      if (material?.metalnessMap) {
+        upgradedMaterial.metalnessMap = material.metalnessMap
+      }
+      if (material?.roughnessMap) {
+        upgradedMaterial.roughnessMap = material.roughnessMap
+      }
+      if (material?.emissiveMap) {
+        upgradedMaterial.emissiveMap = material.emissiveMap
+      }
+      if (material?.normalScale) {
+        upgradedMaterial.normalScale = material.normalScale.clone()
+      }
+      if (material?.aoMapIntensity !== undefined) {
+        upgradedMaterial.aoMapIntensity = material.aoMapIntensity
+      }
+
+      return upgradedMaterial
+    }
+
     const getMaterialForUvMaps = (material, options = {}) => {
       const { preferPbrFinish = false } = options
 
@@ -770,7 +872,7 @@ export default function ShipScene({
       }
 
       if (preferPbrFinish && material?.isMeshStandardMaterial) {
-        material.envMapIntensity = Math.max(material.envMapIntensity ?? 0, 1.9)
+        material.envMapIntensity = Math.max(material.envMapIntensity ?? 0, 1.28)
       }
 
       return material
@@ -806,14 +908,58 @@ export default function ShipScene({
         material.roughness = 1
       }
       if ('envMapIntensity' in material) {
-        material.envMapIntensity = Math.max(material.envMapIntensity ?? 0, 1.9)
+        material.envMapIntensity = Math.max(material.envMapIntensity ?? 0, 1.28)
       }
       material.needsUpdate = true
+    }
+
+    const applyFireFightingCcClearcoat = (material) => {
+      const targetMaterial = material?.isMeshPhysicalMaterial ? material : createPhysicalMaterial(material)
+
+      targetMaterial.metalness = targetMaterial.metalnessMap ? 0.26 : 0.1
+      targetMaterial.roughness = targetMaterial.roughnessMap ? 1 : 0.56
+      targetMaterial.clearcoat = 0.22
+      targetMaterial.clearcoatRoughness = 0.34
+      targetMaterial.envMapIntensity = Math.max(targetMaterial.envMapIntensity ?? 0, 0.92)
+      if ('specularIntensity' in targetMaterial) {
+        targetMaterial.specularIntensity = 0.42
+      }
+      if ('specularColor' in targetMaterial && targetMaterial.specularColor?.set) {
+        targetMaterial.specularColor.set('#d86f72')
+      }
+      targetMaterial.needsUpdate = true
+
+      return targetMaterial
+    }
+
+    const applyFireFightingRailingTransparency = (material) => {
+      const targetMaterial = material?.isMeshPhysicalMaterial ? material : createPhysicalMaterial(material)
+
+      targetMaterial.transparent = true
+      targetMaterial.alphaTest = 0.18
+      targetMaterial.depthWrite = false
+      targetMaterial.side = THREE.DoubleSide
+      targetMaterial.metalness = 1
+      targetMaterial.roughness = targetMaterial.roughnessMap ? 0.42 : 0.18
+      targetMaterial.envMapIntensity = Math.max(targetMaterial.envMapIntensity ?? 0, 1.92)
+      targetMaterial.clearcoat = 0.24
+      targetMaterial.clearcoatRoughness = 0.14
+      if (targetMaterial.emissiveMap) {
+        targetMaterial.emissive = new THREE.Color('#dfe5ee')
+        targetMaterial.emissiveIntensity = 0.42
+      }
+      if ('specularIntensity' in targetMaterial) {
+        targetMaterial.specularIntensity = 1
+      }
+      targetMaterial.needsUpdate = true
+
+      return targetMaterial
     }
 
     const applyUvSetMaps = (rootObject, uvSet, maps, options = {}) => {
       const hint = uvSet.materialNameHint
       const normalizedHint = normalizeMaterialName(hint)
+      const { materialTransform = null } = options
       let appliedCount = 0
       let skippedMeshCount = 0
 
@@ -825,7 +971,7 @@ export default function ShipScene({
         const hasUv = ensureAoUv(child)
         const materials = Array.isArray(child.material) ? child.material : [child.material]
         const updatedMaterials = materials.map((material) => {
-          const targetMaterial = getMaterialForUvMaps(material, options)
+          let targetMaterial = getMaterialForUvMaps(material, options)
           const normalizedMaterialName = normalizeMaterialName(material?.name)
           if (hint && normalizedMaterialName !== normalizedHint) {
             return targetMaterial
@@ -834,10 +980,16 @@ export default function ShipScene({
           if (!hasUv) {
             skippedMeshCount += 1
             applyMapsToMaterial(targetMaterial, maps, { canUseUvMaps: false })
+            if (materialTransform) {
+              targetMaterial = materialTransform(targetMaterial, { uvSet, normalizedMaterialName })
+            }
             return targetMaterial
           }
 
           applyMapsToMaterial(targetMaterial, maps, { canUseUvMaps: true })
+          if (materialTransform) {
+            targetMaterial = materialTransform(targetMaterial, { uvSet, normalizedMaterialName })
+          }
           appliedCount += 1
           return targetMaterial
         })
@@ -955,13 +1107,24 @@ export default function ShipScene({
         )
 
         const textureMap = Object.fromEntries(loadedTextures)
+        const materialTransform = modelId === 'FireFighting'
+          ? (
+              uvSet.id === 'tt/cc'
+                ? applyFireFightingCcClearcoat
+                : uvSet.id === 'tt/langan'
+                  ? applyFireFightingRailingTransparency
+                  : null
+            )
+          : null
         const initialResult = applyUvSetMaps(rootObject, uvSet, textureMap, {
-          preferPbrFinish: targetModelFormat === 'fbx'
+          preferPbrFinish: targetModelFormat === 'fbx',
+          materialTransform
         })
         if (initialResult.appliedCount === 0) {
           // 当材质名提示未命中时，回退为整模型应用，避免贴图完全不生效。
           const fallbackResult = applyUvSetMaps(rootObject, { ...uvSet, materialNameHint: null }, textureMap, {
-            preferPbrFinish: targetModelFormat === 'fbx'
+            preferPbrFinish: targetModelFormat === 'fbx',
+            materialTransform
           })
           if (fallbackResult.appliedCount === 0 && fallbackResult.skippedMeshCount > 0) {
             console.warn(`Skipped UV texture application for ${targetLabel}/${uvSet.id}: model meshes do not contain UV coordinates.`)
@@ -1473,6 +1636,7 @@ export default function ShipScene({
       }
 
       scene.environment = null
+      reflectionEnvironment.dispose()
       environmentTexture.dispose()
       pmremGenerator.dispose()
       externalTextures.forEach((texture) => texture?.dispose())

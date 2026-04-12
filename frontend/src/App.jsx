@@ -4,33 +4,10 @@ import OrderPage from './OrderPage'
 import OrderSuccessPage from './OrderSuccessPage'
 import ShipScene from './ShipScene'
 
-const PREFERRED_MODEL_ID = 'TestHigh'
+const PREFERRED_MODEL_ID = 'FireFighting'
 const MODEL_STORAGE_KEY = 'salesboat.selected-model-id'
 const HERO_IMAGE_FILE_NAME = 'FrontPage.png'
 const BROCHURE_FILE_NAME = '2026\u4eac\u7a57\u8239\u8236\u4ea7\u54c1\u5ba3\u4f20\u518c.pdf'
-
-const detailCards = [
-  {
-    eyebrow: '品牌叙事',
-    title: '更清晰的销售展示节奏',
-    text: '首屏聚焦于产品主视觉与核心标语，让展示开场更像一份精致的画册，而不是冷冰冰的控制面板。'
-  },
-  {
-    eyebrow: '沉浸体验',
-    title: '全屏 3D 实景预览',
-    text: '第二屏为船舶提供了更充裕的展示空间，无论是桌面、平板还是大屏，都更接近线下展厅讲解的感觉。'
-  },
-  {
-    eyebrow: '资产流程',
-    title: '运行资源更易管理',
-    text: 'Go 管理端会同步模型文件、UV 资源和运行时 manifest 数据，让内容更新无需手动重建目录结构。'
-  },
-  {
-    eyebrow: '交付展示',
-    title: '适合线上发布与远程演示',
-    text: '视频素材、画册资源与 3D 模型共用同一套部署路径，更适合上云发布、远程演示和后续维护。'
-  }
-]
 
 const technicalSpecCards = [
   {
@@ -77,6 +54,14 @@ const vesselCategories = [
 function getModelDisplayLabel(model) {
   if (!model) {
     return ''
+  }
+
+  if (model.id === 'FireFighting') {
+    return '消防救援船'
+  }
+
+  if (model.id === 'Cabnet') {
+    return '公务船'
   }
 
   if (model.id === 'TestModel') {
@@ -130,7 +115,7 @@ export default function App() {
   const selectedModelLabel = getModelDisplayLabel(primaryModel) || (models.length ? '选择船型' : '正在加载船型')
   const brochurePath = resolveAppPath(`pdf/${encodeURIComponent(BROCHURE_FILE_NAME)}`)
   const heroImagePath = resolveAppPath(`pdf/${encodeURIComponent(HERO_IMAGE_FILE_NAME)}`)
-  const specImagePath = resolveAppPath('gltf/TestHigh/tbrender.png')
+  const specImagePath = resolveAppPath(`gltf/${primaryModel?.id ?? PREFERRED_MODEL_ID}/tbrender.png`)
 
   useEffect(() => {
     const onHashChange = () => {
@@ -331,34 +316,16 @@ export default function App() {
 
         <section className="detail-screen" id="details">
           <div className="detail-screen-inner">
-            <div className="detail-header">
-              <p className="detail-kicker">详细介绍</p>
-              <h2>第三屏用更结构化的方式，把视觉吸引力转化为完整的销售表达。</h2>
-              <p>
-                这一屏可以用来承接产品定位、交付说明、资料交接与外部视频，让 3D 演示与销售话术更紧密地衔接在一起。
-              </p>
-            </div>
-
-            <div className="detail-grid">
-              {detailCards.map((card) => (
-                <article key={card.title} className="detail-card">
-                  <p className="detail-card-eyebrow">{card.eyebrow}</p>
-                  <h3>{card.title}</h3>
-                  <p>{card.text}</p>
-                </article>
-              ))}
-            </div>
-
             <section className="detail-spec-showcase" aria-label="主要技术参数">
               <div className="detail-spec-visual">
-                <img className="detail-spec-image" src={specImagePath} alt="JS-1580 电动画舫船侧视图" />
+                <img className="detail-spec-image" src={specImagePath} alt={`${selectedModelLabel} 渲染图`} />
               </div>
 
               <div className="detail-spec-panel">
                 <div className="detail-spec-head">
                   <p className="detail-card-eyebrow">参数展示</p>
-                  <h3>JS-1580 电动画舫船 主要技术参数</h3>
-                  <p>左侧展示船型渲染图，右侧用更轻量的参数卡片承接核心配置与交付信息。</p>
+                  <h3>{selectedModelLabel} 主要技术参数</h3>
+                  <p>保留图示与资料卡片，用更直接的方式展示核心配置与交付信息。</p>
                 </div>
 
                 <div className="detail-spec-card-grid">

@@ -244,6 +244,48 @@ export default function OrderPage({
     }
   }, [])
 
+  useEffect(() => {
+    const stepEntries = Object.entries(sectionIds)
+
+    const updateActiveConfigStep = () => {
+      const viewportProbe = 180
+      let currentStep = configurationSteps[0]
+      let bestDistance = Number.POSITIVE_INFINITY
+
+      stepEntries.forEach(([step, sectionId]) => {
+        const element = document.getElementById(sectionId)
+        if (!element) {
+          return
+        }
+
+        const rect = element.getBoundingClientRect()
+        const distance = Math.abs(rect.top - viewportProbe)
+
+        if (rect.top <= viewportProbe && rect.bottom >= viewportProbe) {
+          currentStep = step
+          bestDistance = -1
+          return
+        }
+
+        if (bestDistance !== -1 && distance < bestDistance) {
+          currentStep = step
+          bestDistance = distance
+        }
+      })
+
+      setActiveConfigStep((previous) => (previous === currentStep ? previous : currentStep))
+    }
+
+    updateActiveConfigStep()
+    window.addEventListener('scroll', updateActiveConfigStep, { passive: true })
+    window.addEventListener('resize', updateActiveConfigStep)
+
+    return () => {
+      window.removeEventListener('scroll', updateActiveConfigStep)
+      window.removeEventListener('resize', updateActiveConfigStep)
+    }
+  }, [])
+
   const handleCategorySelect = (category) => {
     setSelectedCategory(category)
     const nextModel = models.find((model) => getCategoryForModel(model) === category)

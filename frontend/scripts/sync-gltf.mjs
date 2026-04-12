@@ -49,6 +49,14 @@ const getPreferredModelFileNames = (modelId) => {
     return ['950.fbx', '950.glb', ...preferredModelFileNames].map((fileName) => fileName.toLowerCase())
   }
 
+  if (modelId === 'Cabnet') {
+    return ['119b.fbx', '119b.glb', ...preferredModelFileNames].map((fileName) => fileName.toLowerCase())
+  }
+
+  if (modelId === 'FireFighting') {
+    return ['13.fbx', '13.glb', ...preferredModelFileNames].map((fileName) => fileName.toLowerCase())
+  }
+
   if (modelId === 'PleasureBoat1') {
     return ['11.fbx', '11.glb', ...preferredModelFileNames].map((fileName) => fileName.toLowerCase())
   }
@@ -255,43 +263,75 @@ const selectModelFileEntry = (entries, modelId, extraPreferredFileNames = []) =>
     return leftName.localeCompare(rightName, 'en')
   })[0]
 
+const collectTextureMaps = (textureDir, textureAssignments) => {
+  const textures = {}
+  const textureFileNames = []
+
+  for (const textureEntry of listFiles(textureDir)) {
+    if (!textureEntry.isFile()) {
+      continue
+    }
+
+    const texturePath = path.join(textureDir, textureEntry.name)
+    const ext = path.extname(textureEntry.name).toLowerCase()
+    if (!allowedExtensions.has(ext)) {
+      continue
+    }
+
+    textureFileNames.push(textureEntry.name)
+
+    const textureType = resolveTextureType(textureEntry.name, texturePath, textureAssignments)
+    if (textureType) {
+      textures[textureType] = toPublicAssetPath(texturePath)
+    }
+  }
+
+  return {
+    textures,
+    textureFileNames
+  }
+}
+
 const buildUvSets = (modelId, modelDir, basePathSegments, textureAssignments) => {
   const childEntries = listFiles(modelDir)
 
   return childEntries
     .filter((childEntry) => childEntry.isDirectory())
     .sort((left, right) => left.name.localeCompare(right.name, 'en'))
-    .map((childEntry) => {
+    .flatMap((childEntry) => {
       const uvDir = path.join(modelDir, childEntry.name)
-      const textures = {}
-      const textureFileNames = []
+      const directTextureSet = collectTextureMaps(uvDir, textureAssignments)
 
-      for (const textureEntry of listFiles(uvDir)) {
-        if (!textureEntry.isFile()) {
-          continue
-        }
-
-        const texturePath = path.join(uvDir, textureEntry.name)
-        const ext = path.extname(textureEntry.name).toLowerCase()
-        if (!allowedExtensions.has(ext)) {
-          continue
-        }
-
-        textureFileNames.push(textureEntry.name)
-
-        const textureType = resolveTextureType(textureEntry.name, texturePath, textureAssignments)
-        if (textureType) {
-          textures[textureType] = toPublicAssetPath(texturePath)
-        }
+      if (directTextureSet.textureFileNames.length > 0) {
+        return [{
+          id: childEntry.name,
+          label: `UV ${childEntry.name}`,
+          directory: `/gltf/${basePathSegments.map((segment) => toPosixPath(segment)).join('/')}/${childEntry.name}`,
+          materialNameHint: inferMaterialNameHint(directTextureSet.textureFileNames),
+          textures: directTextureSet.textures
+        }]
       }
 
-      return {
-        id: childEntry.name,
-        label: `UV ${childEntry.name}`,
-        directory: `/gltf/${basePathSegments.map((segment) => toPosixPath(segment)).join('/')}/${childEntry.name}`,
-        materialNameHint: inferMaterialNameHint(textureFileNames),
-        textures
-      }
+      return listFiles(uvDir)
+        .filter((nestedEntry) => nestedEntry.isDirectory())
+        .sort((left, right) => left.name.localeCompare(right.name, 'en'))
+        .map((nestedEntry) => {
+          const nestedUvDir = path.join(uvDir, nestedEntry.name)
+          const nestedTextureSet = collectTextureMaps(nestedUvDir, textureAssignments)
+
+          if (nestedTextureSet.textureFileNames.length === 0) {
+            return null
+          }
+
+          return {
+            id: `${childEntry.name}/${nestedEntry.name}`,
+            label: `UV ${childEntry.name}/${nestedEntry.name}`,
+            directory: `/gltf/${basePathSegments.map((segment) => toPosixPath(segment)).join('/')}/${childEntry.name}/${nestedEntry.name}`,
+            materialNameHint: inferMaterialNameHint(nestedTextureSet.textureFileNames),
+            textures: nestedTextureSet.textures
+          }
+        })
+        .filter(Boolean)
     })
 }
 
