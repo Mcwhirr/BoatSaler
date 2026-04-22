@@ -777,7 +777,7 @@ export default function ShipScene({
         emissiveIntensity: material?.emissiveIntensity ?? 1,
         opacity: material?.opacity ?? 1,
         transparent: material?.transparent ?? false,
-        side: material?.side ?? THREE.FrontSide,
+        side: material?.side ?? THREE.DoubleSide,
         alphaTest: material?.alphaTest ?? 0,
         depthWrite: material?.depthWrite ?? true,
         depthTest: material?.depthTest ?? true,
@@ -822,7 +822,7 @@ export default function ShipScene({
         emissiveIntensity: material?.emissiveIntensity ?? 1,
         opacity: material?.opacity ?? 1,
         transparent: material?.transparent ?? false,
-        side: material?.side ?? THREE.FrontSide,
+        side: material?.side ?? THREE.DoubleSide,
         alphaTest: material?.alphaTest ?? 0,
         depthWrite: material?.depthWrite ?? true,
         depthTest: material?.depthTest ?? true,
@@ -956,6 +956,55 @@ export default function ShipScene({
       return targetMaterial
     }
 
+    const applyLiuYunGlassFinish = (material) => {
+      const targetMaterial = material?.isMeshPhysicalMaterial ? material : createPhysicalMaterial(material)
+
+      targetMaterial.transparent = true
+      targetMaterial.opacity = 1
+      targetMaterial.alphaTest = 0.02
+      targetMaterial.depthWrite = true
+      targetMaterial.side = THREE.DoubleSide
+      targetMaterial.metalness = 0
+      targetMaterial.roughness = 0.22
+      targetMaterial.envMapIntensity = Math.max(targetMaterial.envMapIntensity ?? 0, 1.18)
+      if ('transmission' in targetMaterial) {
+        targetMaterial.transmission = 0
+      }
+      if ('ior' in targetMaterial) {
+        targetMaterial.ior = 1.5
+      }
+      if ('thickness' in targetMaterial) {
+        targetMaterial.thickness = 0
+      }
+      if ('attenuationDistance' in targetMaterial) {
+        targetMaterial.attenuationDistance = Infinity
+      }
+      targetMaterial.needsUpdate = true
+
+      return targetMaterial
+    }
+
+    const applyLiuYunOpaqueFinish = (material, context = {}) => {
+      if (context.child?.name === 'Box025') {
+        return applyLiuYunGlassFinish(material)
+      }
+
+      const targetMaterial = material?.isMeshPhysicalMaterial ? material : createPhysicalMaterial(material)
+
+      // LiuYun 的 mt BaseColor 虽然带 alpha，但当前更像是导出残留；
+      // 若整组开启透明会导致排序和穿帮，因此先按不透明材质处理。
+      targetMaterial.transparent = false
+      targetMaterial.alphaTest = 0
+      targetMaterial.depthWrite = true
+      targetMaterial.side = THREE.DoubleSide
+      targetMaterial.metalness = targetMaterial.metalnessMap ? 0.22 : 0.08
+      targetMaterial.roughness = targetMaterial.roughnessMap ? 0.88 : 0.52
+      targetMaterial.envMapIntensity = Math.max(targetMaterial.envMapIntensity ?? 0, 1.18)
+      targetMaterial.needsUpdate = true
+
+      return targetMaterial
+    }
+
     const applyUvSetMaps = (rootObject, uvSet, maps, options = {}) => {
       const hint = uvSet.materialNameHint
       const normalizedHint = normalizeMaterialName(hint)
@@ -981,14 +1030,14 @@ export default function ShipScene({
             skippedMeshCount += 1
             applyMapsToMaterial(targetMaterial, maps, { canUseUvMaps: false })
             if (materialTransform) {
-              targetMaterial = materialTransform(targetMaterial, { uvSet, normalizedMaterialName })
+              targetMaterial = materialTransform(targetMaterial, { child, uvSet, normalizedMaterialName })
             }
             return targetMaterial
           }
 
           applyMapsToMaterial(targetMaterial, maps, { canUseUvMaps: true })
           if (materialTransform) {
-            targetMaterial = materialTransform(targetMaterial, { uvSet, normalizedMaterialName })
+            targetMaterial = materialTransform(targetMaterial, { child, uvSet, normalizedMaterialName })
           }
           appliedCount += 1
           return targetMaterial
@@ -1115,7 +1164,9 @@ export default function ShipScene({
                   ? applyFireFightingRailingTransparency
                   : null
             )
-          : null
+          : modelId === 'LiuYun' && uvSet.id === 'mt'
+            ? applyLiuYunOpaqueFinish
+            : null
         const initialResult = applyUvSetMaps(rootObject, uvSet, textureMap, {
           preferPbrFinish: targetModelFormat === 'fbx',
           materialTransform
@@ -1204,7 +1255,7 @@ export default function ShipScene({
       })
     }
 
-    const applyTestModelOverrides = (rootObject) => {
+    const applyDoubleSidedMaterials = (rootObject) => {
       rootObject.traverse((child) => {
         if (!child.isMesh || !child.material) {
           return
@@ -1404,11 +1455,12 @@ export default function ShipScene({
                 console.error('Failed to load fixed texture maps for TwoLayerBoat:', error)
               }
               applyTwoLayerOverrides(object3d)
+              applyDoubleSidedMaterials(object3d)
               return
             }
 
             if (modelId === 'TestModel') {
-              applyTestModelOverrides(object3d)
+              applyDoubleSidedMaterials(object3d)
               return
             }
 
@@ -1425,6 +1477,7 @@ export default function ShipScene({
             }
 
             applyColorConfigToObject(object3d, 'full')
+            applyDoubleSidedMaterials(object3d)
           }
         }
       }
@@ -1457,6 +1510,7 @@ export default function ShipScene({
               if (modelId === 'TestHigh') {
                 applyTestHighStudioOverrides(part.object3d, part.id, partIndex)
               }
+              applyDoubleSidedMaterials(part.object3d)
               continue
             }
 
@@ -1471,6 +1525,7 @@ export default function ShipScene({
             }
 
             applyColorConfigToObject(part.object3d, getTestHighPartRole(part.id, partIndex))
+            applyDoubleSidedMaterials(part.object3d)
           }
         }
       }

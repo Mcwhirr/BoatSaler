@@ -35,7 +35,12 @@ const modelExtensions = ['.glb', '.gltf', '.fbx', '.obj']
 const preferredModelFileNames = ['1.glb', '1.fbx', '2.glb', '2.fbx']
 const modelExtensionPriority = ['.glb', '.gltf', '.fbx', '.obj']
 const preferredPrimaryModelId = 'PleasureBoat1'
+const forceCompositeModelIds = new Set([])
 const preferredCompositePartModelFileNames = {
+  LiuYun: {
+    cc: ['cc.fbx', 'cc.glb'],
+    mt: ['mt.fbx', 'mt.glb']
+  },
   TestHigh: {
     '灯带+控制台（1024）': ['灯带+控制台（完整）.fbx', '灯带+控制台.glb'],
     '船体+顶棚（2048）': ['船体+顶棚(整体).fbx', '船体+顶棚.glb'],
@@ -47,6 +52,10 @@ const preferredCompositePartModelFileNames = {
 const getPreferredModelFileNames = (modelId) => {
   if (modelId === 'Yacht') {
     return ['950.fbx', '950.glb', ...preferredModelFileNames].map((fileName) => fileName.toLowerCase())
+  }
+
+  if (modelId === 'LiuYun') {
+    return ['1198.fbx', '1198.glb', ...preferredModelFileNames].map((fileName) => fileName.toLowerCase())
   }
 
   if (modelId === 'Cabnet') {
@@ -292,24 +301,45 @@ const collectTextureMaps = (textureDir, textureAssignments) => {
   }
 }
 
+const resolveMaterialNameHint = (modelId, uvSetId, textureSet) => {
+  if (modelId === 'LiuYun') {
+    if (uvSetId === 'cc') {
+      return 'M_01___Default'
+    }
+
+    if (uvSetId === 'mt') {
+      return 'M_02___Default'
+    }
+  }
+
+  return inferMaterialNameHint(textureSet.textureFileNames)
+}
+
+const createUvSetConfig = (modelId, id, directorySegments, textureSet) => ({
+  id,
+  label: `UV ${id}`,
+  directory: `/gltf/${directorySegments.map((segment) => toPosixPath(segment)).join('/')}`,
+  materialNameHint: resolveMaterialNameHint(modelId, id, textureSet),
+  textures: textureSet.textures
+})
+
 const buildUvSets = (modelId, modelDir, basePathSegments, textureAssignments) => {
   const childEntries = listFiles(modelDir)
+  const directTextureSet = collectTextureMaps(modelDir, textureAssignments)
+  const directUvSetId = basePathSegments[basePathSegments.length - 1] ?? modelId
+  const directUvSets = directTextureSet.textureFileNames.length > 0
+    ? [createUvSetConfig(modelId, directUvSetId, basePathSegments, directTextureSet)]
+    : []
 
-  return childEntries
+  const nestedUvSets = childEntries
     .filter((childEntry) => childEntry.isDirectory())
     .sort((left, right) => left.name.localeCompare(right.name, 'en'))
     .flatMap((childEntry) => {
       const uvDir = path.join(modelDir, childEntry.name)
-      const directTextureSet = collectTextureMaps(uvDir, textureAssignments)
+      const childTextureSet = collectTextureMaps(uvDir, textureAssignments)
 
-      if (directTextureSet.textureFileNames.length > 0) {
-        return [{
-          id: childEntry.name,
-          label: `UV ${childEntry.name}`,
-          directory: `/gltf/${basePathSegments.map((segment) => toPosixPath(segment)).join('/')}/${childEntry.name}`,
-          materialNameHint: inferMaterialNameHint(directTextureSet.textureFileNames),
-          textures: directTextureSet.textures
-        }]
+      if (childTextureSet.textureFileNames.length > 0) {
+        return [createUvSetConfig(modelId, childEntry.name, [...basePathSegments, childEntry.name], childTextureSet)]
       }
 
       return listFiles(uvDir)
@@ -323,20 +353,28 @@ const buildUvSets = (modelId, modelDir, basePathSegments, textureAssignments) =>
             return null
           }
 
-          return {
-            id: `${childEntry.name}/${nestedEntry.name}`,
-            label: `UV ${childEntry.name}/${nestedEntry.name}`,
-            directory: `/gltf/${basePathSegments.map((segment) => toPosixPath(segment)).join('/')}/${childEntry.name}/${nestedEntry.name}`,
-            materialNameHint: inferMaterialNameHint(nestedTextureSet.textureFileNames),
-            textures: nestedTextureSet.textures
-          }
+          return createUvSetConfig(
+            modelId,
+            `${childEntry.name}/${nestedEntry.name}`,
+            [...basePathSegments, childEntry.name, nestedEntry.name],
+            nestedTextureSet
+          )
         })
         .filter(Boolean)
     })
+
+  return [...directUvSets, ...nestedUvSets]
 }
 
-const buildSingleModelConfig = (modelId, modelDir, modelFileEntry, textureAssignments, basePathSegments = [modelId]) => {
-  const modelFilePath = path.join(modelDir, modelFileEntry.name)
+const buildSingleModelConfig = (
+  modelId,
+  modelDir,
+  modelFileEntry,
+  textureAssignments,
+  basePathSegments = [modelId],
+  modelFileBaseDir = modelDir
+) => {
+  const modelFilePath = path.join(modelFileBaseDir, modelFileEntry.name)
   const uvSets = buildUvSets(modelId, modelDir, basePathSegments, textureAssignments)
 
   return {
@@ -387,7 +425,9 @@ const buildModelManifest = () => {
 
     const modelDir = path.join(sourceDir, entry.name)
     const childEntries = listFiles(modelDir)
-    const modelFileEntry = selectModelFileEntry(childEntries, entry.name)
+    const modelFileEntry = forceCompositeModelIds.has(entry.name)
+      ? null
+      : selectModelFileEntry(childEntries, entry.name)
 
     if (modelFileEntry) {
       models.push(buildSingleModelConfig(entry.name, modelDir, modelFileEntry, textureAssignments))
@@ -400,8 +440,13 @@ const buildModelManifest = () => {
       .map((childEntry) => {
         const partDir = path.join(modelDir, childEntry.name)
         const partEntries = listFiles(partDir)
+        const siblingPartModelEntries = childEntries.filter((partEntry) => (
+          partEntry.isFile()
+          && modelExtensions.includes(path.extname(partEntry.name).toLowerCase())
+          && path.basename(partEntry.name, path.extname(partEntry.name)).toLowerCase() === childEntry.name.toLowerCase()
+        ))
         const partModelFileEntry = selectModelFileEntry(
-          partEntries,
+          [...partEntries, ...siblingPartModelEntries],
           entry.name,
           [
             ...getPreferredCompositePartFileNames(entry.name, childEntry.name),
@@ -415,8 +460,17 @@ const buildModelManifest = () => {
           return null
         }
 
+        const usesSiblingPartModel = siblingPartModelEntries.includes(partModelFileEntry)
+
         return {
-          ...buildSingleModelConfig(entry.name, partDir, partModelFileEntry, textureAssignments, [entry.name, childEntry.name]),
+          ...buildSingleModelConfig(
+            entry.name,
+            partDir,
+            partModelFileEntry,
+            textureAssignments,
+            [entry.name, childEntry.name],
+            usesSiblingPartModel ? modelDir : partDir
+          ),
           id: childEntry.name,
           label: childEntry.name
         }

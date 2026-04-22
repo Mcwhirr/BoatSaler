@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-12T06:21:56.668Z",
+  "generatedAt": "2026-04-13T14:07:28.390Z",
   "source": {
     "assetRoot": "../gltf",
     "publicRoot": "public/gltf"
@@ -14,8 +14,15 @@
         "format": "fbx",
         "path": "/gltf/Cabnet/119B.fbx"
       },
-      "defaultUvSetId": "tt",
+      "defaultUvSetId": "Cabnet",
       "uvSets": [
+        {
+          "id": "Cabnet",
+          "label": "UV Cabnet",
+          "directory": "/gltf/Cabnet",
+          "materialNameHint": null,
+          "textures": {}
+        },
         {
           "id": "tt",
           "label": "UV tt",
@@ -39,8 +46,15 @@
         "format": "fbx",
         "path": "/gltf/FireFighting/13.fbx"
       },
-      "defaultUvSetId": "tt/cc",
+      "defaultUvSetId": "FireFighting",
       "uvSets": [
+        {
+          "id": "FireFighting",
+          "label": "UV FireFighting",
+          "directory": "/gltf/FireFighting",
+          "materialNameHint": null,
+          "textures": {}
+        },
         {
           "id": "tt/cc",
           "label": "UV tt/cc",
@@ -84,14 +98,65 @@
       ]
     },
     {
+      "id": "LiuYun",
+      "label": "LiuYun",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/LiuYun/1198.fbx"
+      },
+      "defaultUvSetId": "LiuYun",
+      "uvSets": [
+        {
+          "id": "LiuYun",
+          "label": "UV LiuYun",
+          "directory": "/gltf/LiuYun",
+          "materialNameHint": null,
+          "textures": {}
+        },
+        {
+          "id": "cc",
+          "label": "UV cc",
+          "directory": "/gltf/LiuYun/cc",
+          "materialNameHint": "M_01___Default",
+          "textures": {
+            "ao": "/gltf/LiuYun/cc/ao.png",
+            "baseColor": "/gltf/LiuYun/cc/CCuv_01 - Default_BaseColor.png",
+            "metalness": "/gltf/LiuYun/cc/CCuv_01 - Default_Metallic.png",
+            "normal": "/gltf/LiuYun/cc/CCuv_01 - Default_Normal.png",
+            "roughness": "/gltf/LiuYun/cc/CCuv_01 - Default_Roughness.png"
+          }
+        },
+        {
+          "id": "mt",
+          "label": "UV mt",
+          "directory": "/gltf/LiuYun/mt",
+          "materialNameHint": "M_02___Default",
+          "textures": {
+            "ao": "/gltf/LiuYun/mt/ao.png",
+            "baseColor": "/gltf/LiuYun/mt/MUTOUuv_01 - Default_BaseColor.png",
+            "metalness": "/gltf/LiuYun/mt/MUTOUuv_01 - Default_Metallic.png",
+            "normal": "/gltf/LiuYun/mt/MUTOUuv_01 - Default_Normal.png",
+            "roughness": "/gltf/LiuYun/mt/MUTOUuv_01 - Default_Roughness.png"
+          }
+        }
+      ]
+    },
+    {
       "id": "PleasureBoat",
       "label": "PleasureBoat",
       "model": {
         "format": "glb",
         "path": "/gltf/PleasureBoat/PleasureBoat.glb"
       },
-      "defaultUvSetId": "tietu",
+      "defaultUvSetId": "PleasureBoat",
       "uvSets": [
+        {
+          "id": "PleasureBoat",
+          "label": "UV PleasureBoat",
+          "directory": "/gltf/PleasureBoat",
+          "materialNameHint": null,
+          "textures": {}
+        },
         {
           "id": "tietu",
           "label": "UV tietu",
@@ -114,8 +179,15 @@
         "format": "fbx",
         "path": "/gltf/PleasureBoat1/11.fbx"
       },
-      "defaultUvSetId": "tt",
+      "defaultUvSetId": "PleasureBoat1",
       "uvSets": [
+        {
+          "id": "PleasureBoat1",
+          "label": "UV PleasureBoat1",
+          "directory": "/gltf/PleasureBoat1",
+          "materialNameHint": null,
+          "textures": {}
+        },
         {
           "id": "tt",
           "label": "UV tt",
@@ -149,8 +221,15 @@
             "format": "fbx",
             "path": "/gltf/TestHigh/灯带+控制台（1024）/灯带+控制台（完整）.fbx"
           },
-          "defaultUvSetId": "TT",
+          "defaultUvSetId": "灯带+控制台（1024）",
           "uvSets": [
+            {
+              "id": "灯带+控制台（1024）",
+              "label": "UV 灯带+控制台（1024）",
+              "directory": "/gltf/TestHigh/灯带+控制台（1024）",
+              "materialNameHint": null,
+              "textures": {}
+            },
             {
               "id": "TT",
               "label": "UV TT",
@@ -174,8 +253,15 @@
             "format": "fbx",
             "path": "/gltf/TestHigh/船体+顶棚（2048）/船体+顶棚(整体).fbx"
           },
-          "defaultUvSetId": "tt",
+          "defaultUvSetId": "船体+顶棚（2048）",
           "uvSets": [
+            {
+              "id": "船体+顶棚（2048）",
+              "label": "UV 船体+顶棚（2048）",
+              "directory": "/gltf/TestHigh/船体+顶棚（2048）",
+              "materialNameHint": null,
+              "textures": {}
+            },
             {
               "id": "tt",
               "label": "UV tt",
@@ -198,8 +284,15 @@
             "format": "fbx",
             "path": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/船舱+栏杆+沙发（完整）.fbx"
           },
-          "defaultUvSetId": "tt",
+          "defaultUvSetId": "船舱+栏杆+沙发（2048）",
           "uvSets": [
+            {
+              "id": "船舱+栏杆+沙发（2048）",
+              "label": "UV 船舱+栏杆+沙发（2048）",
+              "directory": "/gltf/TestHigh/船舱+栏杆+沙发（2048）",
+              "materialNameHint": null,
+              "textures": {}
+            },
             {
               "id": "tt",
               "label": "UV tt",
@@ -222,8 +315,15 @@
             "format": "fbx",
             "path": "/gltf/TestHigh/马达（2048）/马达.fbx"
           },
-          "defaultUvSetId": "tt",
+          "defaultUvSetId": "马达（2048）",
           "uvSets": [
+            {
+              "id": "马达（2048）",
+              "label": "UV 马达（2048）",
+              "directory": "/gltf/TestHigh/马达（2048）",
+              "materialNameHint": null,
+              "textures": {}
+            },
             {
               "id": "tt",
               "label": "UV tt",
@@ -247,8 +347,16 @@
         "format": "fbx",
         "path": "/gltf/TestModel/ddd.fbx"
       },
-      "defaultUvSetId": null,
-      "uvSets": []
+      "defaultUvSetId": "TestModel",
+      "uvSets": [
+        {
+          "id": "TestModel",
+          "label": "UV TestModel",
+          "directory": "/gltf/TestModel",
+          "materialNameHint": null,
+          "textures": {}
+        }
+      ]
     },
     {
       "id": "TwoLayerBoat",
@@ -257,8 +365,15 @@
         "format": "glb",
         "path": "/gltf/TwoLayerBoat/TwoLayerBoat.glb"
       },
-      "defaultUvSetId": "1",
+      "defaultUvSetId": "TwoLayerBoat",
       "uvSets": [
+        {
+          "id": "TwoLayerBoat",
+          "label": "UV TwoLayerBoat",
+          "directory": "/gltf/TwoLayerBoat",
+          "materialNameHint": null,
+          "textures": {}
+        },
         {
           "id": "1",
           "label": "UV 1",
@@ -291,8 +406,15 @@
         "format": "fbx",
         "path": "/gltf/Yacht/950.fbx"
       },
-      "defaultUvSetId": "tt",
+      "defaultUvSetId": "Yacht",
       "uvSets": [
+        {
+          "id": "Yacht",
+          "label": "UV Yacht",
+          "directory": "/gltf/Yacht",
+          "materialNameHint": null,
+          "textures": {}
+        },
         {
           "id": "tt",
           "label": "UV tt",
