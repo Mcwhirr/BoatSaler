@@ -1,3 +1,16 @@
 logs/
 *.log
-
+*.pem
+*.key
+*.zip
+*.exe
+.env
+.env.*
+dist/
+frontend/dist/
+node_modules/
+frontend/node_modules/
+temp/
+data/admin-auth.json
+data/cos-sync.env
+data/*.server-recovered.json

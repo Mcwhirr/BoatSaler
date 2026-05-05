@@ -4,15 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "sync:gltf": "node scripts/sync-gltf.mjs",
+    "sync:gltf": "node scripts/sync-gltf.mjs && node scripts/validate-material-bindings.mjs && node scripts/fix-shared-permissions.mjs",
+    "merge:detail-images": "node scripts/merge-site-content-detail-images.mjs",
     "predev": "npm run sync:gltf",
     "prebuild": "npm run sync:gltf",
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/fix-shared-permissions.mjs",
     "preview": "vite preview"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.0.2",
+    "sharp": "^0.34.5",
     "vite": "^7.1.7"
   },
   "dependencies": {

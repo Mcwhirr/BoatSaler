@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -49,11 +50,13 @@ type assetManifestSource struct {
 }
 
 type assetManifestModel struct {
-	ID             string               `json:"id"`
-	Label          string               `json:"label"`
-	Model          assetManifestFile    `json:"model"`
-	DefaultUVSetID *string              `json:"defaultUvSetId"`
-	UVSets         []assetManifestUVSet `json:"uvSets"`
+	ID             string                     `json:"id"`
+	Label          string                     `json:"label"`
+	Model          assetManifestFile          `json:"model"`
+	DefaultUVSetID *string                    `json:"defaultUvSetId"`
+	UVSets         []assetManifestUVSet       `json:"uvSets"`
+	Parts          []assetManifestModel       `json:"parts,omitempty"`
+	Runtime        *assetManifestModelRuntime `json:"runtime,omitempty"`
 }
 
 type assetManifestFile struct {
@@ -62,11 +65,58 @@ type assetManifestFile struct {
 }
 
 type assetManifestUVSet struct {
-	ID               string            `json:"id"`
-	Label            string            `json:"label"`
-	Directory        string            `json:"directory"`
-	MaterialNameHint *string           `json:"materialNameHint"`
-	Textures         map[string]string `json:"textures"`
+	ID                 string                                 `json:"id"`
+	Label              string                                 `json:"label"`
+	Directory          string                                 `json:"directory"`
+	MaterialNameHint   *string                                `json:"materialNameHint"`
+	MaterialHintSource string                                 `json:"materialHintSource,omitempty"`
+	Textures           map[string]string                      `json:"textures"`
+	TextureOptions     map[string]assetManifestTextureOptions `json:"textureOptions,omitempty"`
+	RenderProfile      *assetManifestRenderProfile            `json:"renderProfile,omitempty"`
+}
+
+type assetManifestTextureOptions struct {
+	UseAlphaAsOpacity bool `json:"useAlphaAsOpacity,omitempty"`
+}
+
+type assetManifestRenderProfile struct {
+	AlphaMode   string  `json:"alphaMode,omitempty"`
+	Side        string  `json:"side,omitempty"`
+	DepthWrite  string  `json:"depthWrite,omitempty"`
+	DepthTest   string  `json:"depthTest,omitempty"`
+	AlphaCutoff float64 `json:"alphaCutoff,omitempty"`
+	RenderOrder *int    `json:"renderOrder,omitempty"`
+}
+
+type assetManifestMaterialSlot struct {
+	Name           string `json:"name"`
+	NormalizedName string `json:"normalizedName,omitempty"`
+	MeshCount      int    `json:"meshCount,omitempty"`
+}
+
+type assetManifestRuntimeCandidate struct {
+	FileName         string                      `json:"fileName"`
+	Format           string                      `json:"format"`
+	Path             string                      `json:"path"`
+	Score            float64                     `json:"score,omitempty"`
+	MaterialSlots    []assetManifestMaterialSlot `json:"materialSlots,omitempty"`
+	MeshCount        int                         `json:"meshCount,omitempty"`
+	MeshWithUVCount  int                         `json:"meshWithUvCount,omitempty"`
+	MeshWithUV2Count int                         `json:"meshWithUv2Count,omitempty"`
+	UVCoverage       float64                     `json:"uvCoverage,omitempty"`
+	UV2Coverage      float64                     `json:"uv2Coverage,omitempty"`
+	InspectionError  string                      `json:"inspectionError,omitempty"`
+}
+
+type assetManifestModelRuntime struct {
+	MaterialSlots    []assetManifestMaterialSlot     `json:"materialSlots,omitempty"`
+	MeshCount        int                             `json:"meshCount,omitempty"`
+	MeshWithUVCount  int                             `json:"meshWithUvCount,omitempty"`
+	MeshWithUV2Count int                             `json:"meshWithUv2Count,omitempty"`
+	UVCoverage       float64                         `json:"uvCoverage,omitempty"`
+	UV2Coverage      float64                         `json:"uv2Coverage,omitempty"`
+	InspectionError  string                          `json:"inspectionError,omitempty"`
+	Candidates       []assetManifestRuntimeCandidate `json:"candidates,omitempty"`
 }
 
 type adminDashboard struct {
@@ -79,19 +129,31 @@ type adminDashboard struct {
 }
 
 type adminModel struct {
-	ID                string       `json:"id"`
-	SelectedModelPath string       `json:"selectedModelPath,omitempty"`
-	Files             []adminFile  `json:"files"`
-	UVSets            []adminUVSet `json:"uvSets"`
-	FileCount         int          `json:"fileCount"`
-	TotalBytes        int64        `json:"totalBytes"`
+	ID                string                     `json:"id"`
+	DisplayName       string                     `json:"displayName,omitempty"`
+	Type              string                     `json:"type,omitempty"`
+	Price             string                     `json:"price,omitempty"`
+	Specs             siteModelSpecs             `json:"specs"`
+	Engines           []siteEngineMount          `json:"engines,omitempty"`
+	DetailImagePath   string                     `json:"detailImagePath,omitempty"`
+	Summary           string                     `json:"summary,omitempty"`
+	SelectedModelPath string                     `json:"selectedModelPath,omitempty"`
+	Files             []adminFile                `json:"files"`
+	UVSets            []adminUVSet               `json:"uvSets"`
+	FileCount         int                        `json:"fileCount"`
+	TotalBytes        int64                      `json:"totalBytes"`
+	Runtime           *assetManifestModelRuntime `json:"runtime,omitempty"`
 }
 
 type adminUVSet struct {
-	ID         string      `json:"id"`
-	Files      []adminFile `json:"files"`
-	FileCount  int         `json:"fileCount"`
-	TotalBytes int64       `json:"totalBytes"`
+	ID                 string             `json:"id"`
+	DirectoryPath      string             `json:"directoryPath,omitempty"`
+	MaterialNameHint   string             `json:"materialNameHint,omitempty"`
+	MaterialHintSource string             `json:"materialHintSource,omitempty"`
+	RenderProfile      uvSetRenderProfile `json:"renderProfile,omitempty"`
+	Files              []adminFile        `json:"files"`
+	FileCount          int                `json:"fileCount"`
+	TotalBytes         int64              `json:"totalBytes"`
 }
 
 type adminFile struct {
@@ -104,6 +166,7 @@ type adminFile struct {
 	DetectedTextureType string `json:"detectedTextureType,omitempty"`
 	TextureAssignment   string `json:"textureAssignment,omitempty"`
 	TextureCandidate    bool   `json:"textureCandidate,omitempty"`
+	UseAlphaAsOpacity   bool   `json:"useAlphaAsOpacity,omitempty"`
 }
 
 func (a *app) readManifest() (assetManifest, error) {
@@ -153,6 +216,21 @@ func (a *app) buildDashboard() (adminDashboard, error) {
 		return dashboard, err
 	}
 
+	for index := range models {
+		metadata, ok := content.Models[models[index].ID]
+		if !ok {
+			continue
+		}
+
+		models[index].DisplayName = strings.TrimSpace(metadata.DisplayName)
+		models[index].Type = strings.TrimSpace(metadata.Type)
+		models[index].Price = strings.TrimSpace(metadata.Price)
+		models[index].Specs = metadata.Specs
+		models[index].Engines = metadata.Engines
+		models[index].DetailImagePath = strings.TrimSpace(metadata.DetailImagePath)
+		models[index].Summary = strings.TrimSpace(metadata.Summary)
+	}
+
 	dashboard = adminDashboard{
 		SourceRoot: toPosixPath(a.sourceDir),
 		PublicRoot: toPosixPath(a.publicDir),
@@ -166,18 +244,6 @@ func (a *app) buildDashboard() (adminDashboard, error) {
 }
 
 func (a *app) syncAssetsLocked() (assetManifest, error) {
-	if err := os.RemoveAll(a.publicDir); err != nil {
-		return assetManifest{}, fmt.Errorf("reset public assets: %w", err)
-	}
-
-	if err := os.MkdirAll(a.publicDir, 0o755); err != nil {
-		return assetManifest{}, fmt.Errorf("create public assets dir: %w", err)
-	}
-
-	if err := copySupportedAssets(a.sourceDir, a.publicDir); err != nil {
-		return assetManifest{}, err
-	}
-
 	assignments, err := a.readTextureAssignments()
 	if err != nil {
 		return assetManifest{}, err
@@ -189,21 +255,32 @@ func (a *app) syncAssetsLocked() (assetManifest, error) {
 		}
 	}
 
-	manifest, err := buildAssetManifest(a.sourceDir, a.frontendDir, assignments)
-	if err != nil {
+	if err := a.runFrontendAssetSync(); err != nil {
 		return assetManifest{}, err
 	}
 
-	manifestData, err := json.MarshalIndent(manifest, "", "  ")
+	manifest, err := a.readManifest()
 	if err != nil {
-		return assetManifest{}, fmt.Errorf("marshal manifest: %w", err)
+		return assetManifest{}, fmt.Errorf("read manifest after sync: %w", err)
 	}
 
-	if err := os.WriteFile(a.manifestPath, append(manifestData, '\n'), 0o644); err != nil {
-		return assetManifest{}, fmt.Errorf("write manifest: %w", err)
+	if err := a.syncAssetsToCOS(); err != nil {
+		return assetManifest{}, err
 	}
 
 	return manifest, nil
+}
+
+func (a *app) runFrontendAssetSync() error {
+	command := exec.Command("npm", "run", "sync:gltf")
+	command.Dir = a.frontendDir
+	command.Env = os.Environ()
+	output, err := command.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("run frontend asset sync: %w\n%s", err, strings.TrimSpace(string(output)))
+	}
+
+	return nil
 }
 
 func copySupportedAssets(fromDir string, toDir string) error {
@@ -358,6 +435,7 @@ func buildManifestUVSet(sourceDir string, uvDir string, modelID string, uvSetID 
 	}
 
 	textures := make(map[string]string)
+	textureOptions := make(map[string]assetManifestTextureOptions)
 	textureFileNames := make([]string, 0)
 
 	for _, entry := range entries {
@@ -378,26 +456,66 @@ func buildManifestUVSet(sourceDir string, uvDir string, modelID string, uvSetID 
 		}
 
 		textures[resolution.Effective] = toPublicAssetPath(sourceDir, filepath.Join(uvDir, fileName))
+		if resolution.UseAlphaAsOpacity {
+			textureOptions[resolution.Effective] = assetManifestTextureOptions{
+				UseAlphaAsOpacity: true,
+			}
+		}
+	}
+
+	materialHintSource := ""
+	resolvedHint := resolveUVSetMaterialNameHint(assignments, modelID, mustRelativePath(filepath.Join(sourceDir, modelID), uvDir))
+	if resolvedHint == "" {
+		resolvedHint = inferMaterialNameHint(textureFileNames)
+		if resolvedHint != "" {
+			materialHintSource = "inferred"
+		}
+	} else {
+		materialHintSource = "manual"
 	}
 
 	var materialHint *string
-	if hint := inferMaterialNameHint(textureFileNames); hint != "" {
-		materialHint = &hint
+	if resolvedHint != "" {
+		materialHint = &resolvedHint
+	}
+
+	var normalizedTextureOptions map[string]assetManifestTextureOptions
+	if len(textureOptions) > 0 {
+		normalizedTextureOptions = textureOptions
+	}
+
+	resolvedRenderProfile := resolveUVSetRenderProfile(assignments, modelID, mustRelativePath(filepath.Join(sourceDir, modelID), uvDir))
+	var manifestRenderProfile *assetManifestRenderProfile
+	if !resolvedRenderProfile.isEmpty() {
+		manifestRenderProfile = &assetManifestRenderProfile{
+			AlphaMode:   resolvedRenderProfile.AlphaMode,
+			Side:        resolvedRenderProfile.Side,
+			DepthWrite:  resolvedRenderProfile.DepthWrite,
+			DepthTest:   resolvedRenderProfile.DepthTest,
+			AlphaCutoff: resolvedRenderProfile.AlphaCutoff,
+			RenderOrder: resolvedRenderProfile.RenderOrder,
+		}
 	}
 
 	return assetManifestUVSet{
-		ID:               uvSetID,
-		Label:            fmt.Sprintf("UV %s", uvSetID),
-		Directory:        fmt.Sprintf("/gltf/%s/%s", modelID, uvSetID),
-		MaterialNameHint: materialHint,
-		Textures:         textures,
+		ID:                 uvSetID,
+		Label:              fmt.Sprintf("UV %s", uvSetID),
+		Directory:          fmt.Sprintf("/gltf/%s/%s", modelID, uvSetID),
+		MaterialNameHint:   materialHint,
+		MaterialHintSource: materialHintSource,
+		Textures:           textures,
+		TextureOptions:     normalizedTextureOptions,
+		RenderProfile:      manifestRenderProfile,
 	}, nil
 }
 
 func scanAdminModels(sourceDir string, manifest assetManifest, assignments textureAssignments) ([]adminModel, error) {
 	selectedModelPathByID := make(map[string]string, len(manifest.Models))
+	runtimeByID := make(map[string]*assetManifestModelRuntime, len(manifest.Models))
+	uvSetByModelAndPath := buildManifestUVSetIndex(manifest)
 	for _, model := range manifest.Models {
 		selectedModelPathByID[model.ID] = model.Model.Path
+		runtimeByID[model.ID] = model.Runtime
 	}
 
 	entries, err := os.ReadDir(sourceDir)
@@ -412,7 +530,15 @@ func scanAdminModels(sourceDir string, manifest assetManifest, assignments textu
 		}
 
 		modelDir := filepath.Join(sourceDir, entry.Name())
-		model, err := scanAdminModel(sourceDir, modelDir, entry.Name(), selectedModelPathByID[entry.Name()], assignments)
+		model, err := scanAdminModel(
+			sourceDir,
+			modelDir,
+			entry.Name(),
+			selectedModelPathByID[entry.Name()],
+			runtimeByID[entry.Name()],
+			uvSetByModelAndPath[entry.Name()],
+			assignments,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -427,7 +553,47 @@ func scanAdminModels(sourceDir string, manifest assetManifest, assignments textu
 	return models, nil
 }
 
-func scanAdminModel(sourceDir string, modelDir string, modelID string, selectedModelPath string, assignments textureAssignments) (adminModel, error) {
+func buildManifestUVSetIndex(manifest assetManifest) map[string]map[string]assetManifestUVSet {
+	result := make(map[string]map[string]assetManifestUVSet, len(manifest.Models))
+	for _, model := range manifest.Models {
+		modelUVSets := make(map[string]assetManifestUVSet)
+		appendUVSetsToIndex(model.ID, model.UVSets, modelUVSets)
+		for _, part := range model.Parts {
+			appendUVSetsToIndex(model.ID, part.UVSets, modelUVSets)
+		}
+		result[model.ID] = modelUVSets
+	}
+
+	return result
+}
+
+func appendUVSetsToIndex(modelID string, uvSets []assetManifestUVSet, target map[string]assetManifestUVSet) {
+	for _, uvSet := range uvSets {
+		relativePath := manifestUVSetModelRelativePath(modelID, uvSet.Directory)
+		if relativePath == "" {
+			continue
+		}
+
+		target[relativePath] = uvSet
+	}
+}
+
+func manifestUVSetModelRelativePath(modelID string, directory string) string {
+	normalizedDirectory := strings.TrimPrefix(toPosixPath(strings.TrimSpace(directory)), "/")
+	prefix := toPosixPath(filepath.Join("gltf", modelID))
+	if normalizedDirectory == prefix {
+		return "."
+	}
+
+	prefixWithSlash := prefix + "/"
+	if !strings.HasPrefix(normalizedDirectory, prefixWithSlash) {
+		return ""
+	}
+
+	return strings.TrimPrefix(normalizedDirectory, prefixWithSlash)
+}
+
+func scanAdminModel(sourceDir string, modelDir string, modelID string, selectedModelPath string, runtime *assetManifestModelRuntime, manifestUVSets map[string]assetManifestUVSet, assignments textureAssignments) (adminModel, error) {
 	entries, err := os.ReadDir(modelDir)
 	if err != nil {
 		return adminModel{}, fmt.Errorf("read model dir %s: %w", modelID, err)
@@ -436,6 +602,7 @@ func scanAdminModel(sourceDir string, modelDir string, modelID string, selectedM
 	model := adminModel{
 		ID:                modelID,
 		SelectedModelPath: selectedModelPath,
+		Runtime:           runtime,
 		Files:             []adminFile{},
 		UVSets:            []adminUVSet{},
 	}
@@ -443,14 +610,16 @@ func scanAdminModel(sourceDir string, modelDir string, modelID string, selectedM
 	for _, entry := range entries {
 		entryPath := filepath.Join(modelDir, entry.Name())
 		if entry.IsDir() {
-			uvSet, err := scanAdminUVSet(sourceDir, entryPath, entry.Name(), assignments)
+			uvSets, err := scanAdminUVSets(sourceDir, modelID, entryPath, entry.Name(), manifestUVSets, assignments)
 			if err != nil {
 				return adminModel{}, err
 			}
 
-			model.UVSets = append(model.UVSets, uvSet)
-			model.FileCount += uvSet.FileCount
-			model.TotalBytes += uvSet.TotalBytes
+			for _, uvSet := range uvSets {
+				model.UVSets = append(model.UVSets, uvSet)
+				model.FileCount += uvSet.FileCount
+				model.TotalBytes += uvSet.TotalBytes
+			}
 			continue
 		}
 
@@ -481,12 +650,133 @@ func scanAdminModel(sourceDir string, modelDir string, modelID string, selectedM
 	return model, nil
 }
 
-func scanAdminUVSet(sourceDir string, uvDir string, uvSetID string, assignments textureAssignments) (adminUVSet, error) {
+func scanAdminUVSets(sourceDir string, modelID string, uvDir string, uvSetID string, manifestUVSets map[string]assetManifestUVSet, assignments textureAssignments) ([]adminUVSet, error) {
+	directFiles, err := collectDirectFiles(sourceDir, uvDir, uvDir, assignments)
+	if err != nil {
+		return nil, err
+	}
+
+	if hasTextureFiles(directFiles) {
+		files, err := collectFilesRecursively(sourceDir, uvDir, uvDir, assignments)
+		if err != nil {
+			return nil, err
+		}
+
+		uvSet, err := buildAdminUVSetFromFiles(sourceDir, modelID, uvDir, uvSetID, manifestUVSets, files, assignments)
+		if err != nil {
+			return nil, err
+		}
+
+		return []adminUVSet{uvSet}, nil
+	}
+
+	entries, err := os.ReadDir(uvDir)
+	if err != nil {
+		return nil, fmt.Errorf("read uv dir %s/%s: %w", modelID, uvSetID, err)
+	}
+
+	uvSets := make([]adminUVSet, 0)
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		nestedDir := filepath.Join(uvDir, entry.Name())
+		nestedUVSetID := toPosixPath(filepath.Join(uvSetID, entry.Name()))
+		nestedFiles, err := collectFilesRecursively(sourceDir, nestedDir, nestedDir, assignments)
+		if err != nil {
+			return nil, err
+		}
+		if !hasTextureFiles(nestedFiles) {
+			continue
+		}
+
+		uvSet, err := buildAdminUVSetFromFiles(sourceDir, modelID, nestedDir, nestedUVSetID, manifestUVSets, nestedFiles, assignments)
+		if err != nil {
+			return nil, err
+		}
+		uvSets = append(uvSets, uvSet)
+	}
+
+	if len(uvSets) == 0 {
+		files, err := collectFilesRecursively(sourceDir, uvDir, uvDir, assignments)
+		if err != nil {
+			return nil, err
+		}
+
+		uvSet, err := buildAdminUVSetFromFiles(sourceDir, modelID, uvDir, uvSetID, manifestUVSets, files, assignments)
+		if err != nil {
+			return nil, err
+		}
+		uvSets = append(uvSets, uvSet)
+	}
+
+	sort.Slice(uvSets, func(i, j int) bool {
+		return uvSets[i].DirectoryPath < uvSets[j].DirectoryPath
+	})
+
+	return uvSets, nil
+}
+
+func collectDirectFiles(sourceDir string, baseDir string, currentDir string, assignments textureAssignments) ([]adminFile, error) {
+	entries, err := os.ReadDir(currentDir)
+	if err != nil {
+		return nil, fmt.Errorf("read directory %s: %w", currentDir, err)
+	}
+
+	files := make([]adminFile, 0)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		entryPath := filepath.Join(currentDir, entry.Name())
+		info, err := entry.Info()
+		if err != nil {
+			return nil, fmt.Errorf("read file info %s: %w", entryPath, err)
+		}
+
+		relativePath, err := filepath.Rel(baseDir, entryPath)
+		if err != nil {
+			return nil, fmt.Errorf("resolve relative path for %s: %w", entryPath, err)
+		}
+
+		files = append(files, buildAdminFile(
+			entry.Name(),
+			toPosixPath(relativePath),
+			toPosixPath(mustRelativePath(sourceDir, entryPath)),
+			info.Size(),
+			assignments,
+		))
+	}
+
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].RelativePath < files[j].RelativePath
+	})
+
+	return files, nil
+}
+
+func hasTextureFiles(files []adminFile) bool {
+	for _, file := range files {
+		if file.TextureCandidate && file.TextureType != "" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func scanAdminUVSet(sourceDir string, modelID string, uvDir string, uvSetID string, assignments textureAssignments) (adminUVSet, error) {
 	files, err := collectFilesRecursively(sourceDir, uvDir, uvDir, assignments)
 	if err != nil {
 		return adminUVSet{}, err
 	}
 
+	return buildAdminUVSetFromFiles(sourceDir, modelID, uvDir, uvSetID, nil, files, assignments)
+}
+
+func buildAdminUVSetFromFiles(sourceDir string, modelID string, uvDir string, uvSetID string, manifestUVSets map[string]assetManifestUVSet, files []adminFile, assignments textureAssignments) (adminUVSet, error) {
 	if files == nil {
 		files = []adminFile{}
 	}
@@ -496,11 +786,39 @@ func scanAdminUVSet(sourceDir string, uvDir string, uvSetID string, assignments 
 		totalBytes += file.Size
 	}
 
+	relativeModelPath := mustRelativePath(filepath.Join(sourceDir, modelID), uvDir)
+	resolvedHint := resolveUVSetMaterialNameHint(assignments, modelID, relativeModelPath)
+	resolvedRenderProfile := resolveUVSetRenderProfile(assignments, modelID, relativeModelPath)
+	hintSource := ""
+	if resolvedHint != "" {
+		hintSource = "manual"
+	} else {
+		textureFileNames := make([]string, 0, len(files))
+		for _, file := range files {
+			textureFileNames = append(textureFileNames, file.Name)
+		}
+		resolvedHint = inferMaterialNameHint(textureFileNames)
+		if resolvedHint != "" {
+			hintSource = "inferred"
+		}
+	}
+	if manifestUVSet, ok := manifestUVSets[toPosixPath(relativeModelPath)]; ok && manifestUVSet.MaterialNameHint != nil && strings.TrimSpace(*manifestUVSet.MaterialNameHint) != "" {
+		resolvedHint = strings.TrimSpace(*manifestUVSet.MaterialNameHint)
+		hintSource = strings.TrimSpace(manifestUVSet.MaterialHintSource)
+		if hintSource == "" {
+			hintSource = "manifest"
+		}
+	}
+
 	return adminUVSet{
-		ID:         uvSetID,
-		Files:      files,
-		FileCount:  len(files),
-		TotalBytes: totalBytes,
+		ID:                 uvSetID,
+		DirectoryPath:      toPosixPath(relativeModelPath),
+		MaterialNameHint:   resolvedHint,
+		MaterialHintSource: hintSource,
+		RenderProfile:      resolvedRenderProfile,
+		Files:              files,
+		FileCount:          len(files),
+		TotalBytes:         totalBytes,
 	}, nil
 }
 
@@ -563,6 +881,7 @@ func buildAdminFile(name string, relativePath string, sourceRelativePath string,
 		DetectedTextureType: resolution.Detected,
 		TextureAssignment:   resolution.Assignment,
 		TextureCandidate:    resolution.Candidate,
+		UseAlphaAsOpacity:   resolution.UseAlphaAsOpacity,
 	}
 }
 
@@ -589,6 +908,15 @@ func copyFile(fromPath string, toPath string) error {
 func isAllowedAssetExtension(extension string) bool {
 	_, ok := allowedAssetExtensions[extension]
 	return ok
+}
+
+func isPreviewImageExtension(extension string) bool {
+	switch strings.ToLower(extension) {
+	case ".png", ".jpg", ".jpeg", ".webp":
+		return true
+	default:
+		return false
+	}
 }
 
 func isModelExtension(extension string) bool {
@@ -648,6 +976,22 @@ func pickPreferredModelFile(modelID string, entries []fs.DirEntry) fs.DirEntry {
 func getPreferredModelFileNames(modelID string) []string {
 	base := make([]string, 0, len(preferredModelFileNames)+2)
 
+	if modelID == "40mijianchuan" {
+		base = append(base, "40.fbx", "40.glb")
+	}
+
+	if modelID == "LiuYun" {
+		base = append(base, "1198.fbx", "1198.glb")
+	}
+
+	if modelID == "Cabnet" {
+		base = append(base, "119b.fbx", "119b.glb")
+	}
+
+	if modelID == "FireFighting" {
+		base = append(base, "13.fbx", "13.glb")
+	}
+
 	if modelID == "Yacht" {
 		base = append(base, "950.fbx", "950.glb")
 	}
@@ -668,6 +1012,13 @@ func classifyTexture(fileName string) string {
 	normalizedName = strings.NewReplacer("-", "_", " ", "_").Replace(normalizedName)
 
 	switch {
+	case strings.Contains(normalizedName, "r+m+ao"),
+		strings.Contains(normalizedName, "r_m_ao"),
+		strings.Contains(normalizedName, "occlusionroughnessmetallic"),
+		strings.Contains(normalizedName, "occlusion_roughness_metallic"):
+		return "orm"
+	case hasStandaloneOrmToken(normalizedName):
+		return "orm"
 	case strings.Contains(normalizedName, "basecolor"),
 		strings.Contains(normalizedName, "base_color"),
 		strings.Contains(normalizedName, "albedo"),
@@ -692,6 +1043,13 @@ func classifyTexture(fileName string) string {
 		strings.Contains(normalizedName, "metalness"),
 		strings.Contains(normalizedName, "metal"):
 		return "metalness"
+	case strings.Contains(normalizedName, "opacity"),
+		strings.Contains(normalizedName, "transparency"),
+		normalizedName == "alpha",
+		strings.HasPrefix(normalizedName, "alpha_"),
+		strings.HasSuffix(normalizedName, "_alpha"),
+		strings.Contains(normalizedName, "transparent"):
+		return "opacity"
 	default:
 		return ""
 	}
@@ -712,6 +1070,14 @@ func inferMaterialNameHint(fileNames []string) string {
 	}
 
 	return ""
+}
+
+func hasStandaloneOrmToken(value string) bool {
+	if value == "orm" || strings.HasPrefix(value, "orm.") || strings.HasSuffix(value, "_orm") || strings.Contains(value, "_orm_") {
+		return true
+	}
+
+	return false
 }
 
 func isTwoDigitPrefix(value string) bool {

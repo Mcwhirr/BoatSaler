@@ -1,5 +1,6 @@
 ﻿import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+import { createPortal } from 'react-dom'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -36,6 +37,26 @@ const DEFAULT_WATER_TUNING = {
   zOffset: 0.16,
   exteriorModelLiftY: 0
 }
+const UV_SET_ALPHA_MODE_OPAQUE = 'opaque'
+const UV_SET_ALPHA_MODE_CUTOUT = 'cutout'
+const UV_SET_ALPHA_MODE_BLEND = 'blend'
+const UV_SET_SIDE_FRONT = 'front'
+const UV_SET_SIDE_DOUBLE = 'double'
+const UV_SET_DEPTH_WRITE_ON = 'on'
+const UV_SET_DEPTH_WRITE_OFF = 'off'
+const UV_SET_DEPTH_TEST_ON = 'on'
+const UV_SET_DEPTH_TEST_OFF = 'off'
+const TWO_LAYER_TRACKED_TEXTURE_PATHS = [
+  'gltf/TwoLayerBoat/1/1_01 - Default_Emissive.png',
+  'gltf/TwoLayerBoat/1/1_01 - Default_Normal.png',
+  'gltf/TwoLayerBoat/1/AO.png',
+  'gltf/TwoLayerBoat/1/meti.png',
+  'gltf/TwoLayerBoat/1/rou.png',
+  'gltf/TwoLayerBoat/2/1_02 - Default_Normal.png',
+  'gltf/TwoLayerBoat/2/AO_3.png',
+  'gltf/TwoLayerBoat/2/meti_1.png',
+  'gltf/TwoLayerBoat/2/rou_2.png'
+]
 const MODEL_WATER_TUNING = {
   PleasureBoat: {
     levelFactor: 0.06,
@@ -76,6 +97,47 @@ const DEFAULT_INTERIOR_DECK_PRESETS = {
   }
 }
 
+const ENGINE_MODEL_LIBRARY = {
+  'outboard-a': {
+    format: 'fbx',
+    path: '/gltf/TestHigh/马达（2048）/马达.fbx',
+    targetHeightScale: 0.34,
+    uvSets: [
+      {
+        id: 'tt',
+        label: 'UV tt',
+        directory: '/gltf/TestHigh/马达（2048）/tt',
+        materialNameHint: 'M_07___Default',
+        textures: {
+          baseColor: '/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_BaseColor.png',
+          metalness: '/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Metallic.png',
+          normal: '/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Normal.png',
+          roughness: '/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Roughness.png'
+        }
+      }
+    ]
+  },
+  'outboard-b': {
+    format: 'fbx',
+    path: '/gltf/TestHigh/马达（2048）/马达.fbx',
+    targetHeightScale: 0.34,
+    uvSets: [
+      {
+        id: 'tt',
+        label: 'UV tt',
+        directory: '/gltf/TestHigh/马达（2048）/tt',
+        materialNameHint: 'M_07___Default',
+        textures: {
+          baseColor: '/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_BaseColor.png',
+          metalness: '/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Metallic.png',
+          normal: '/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Normal.png',
+          roughness: '/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Roughness.png'
+        }
+      }
+    ]
+  }
+}
+
 const TEST_HIGH_INTERIOR_DECK_PRESETS = {
   '1': {
     position: [0, 0.78, -1.55],
@@ -109,6 +171,91 @@ function getWaterTuning(modelId) {
   return {
     ...DEFAULT_WATER_TUNING,
     ...(MODEL_WATER_TUNING[modelId] ?? {})
+  }
+}
+
+function normalizeBaseUrl(baseUrl) {
+  const normalizedValue = `${baseUrl ?? ''}`.trim()
+  if (!normalizedValue) {
+    return '/'
+  }
+
+  return normalizedValue.endsWith('/') ? normalizedValue : `${normalizedValue}/`
+}
+
+function getStaticAssetBaseUrl(staticAssetOrigin, fallbackBaseUrl) {
+  const explicitOrigin = `${staticAssetOrigin ?? ''}`.trim()
+  if (explicitOrigin) {
+    return normalizeBaseUrl(explicitOrigin)
+  }
+
+  if (typeof window !== 'undefined') {
+    const pathname = window.location.pathname || '/'
+    const basePath = pathname.endsWith('/')
+      ? pathname
+      : pathname.slice(0, pathname.lastIndexOf('/') + 1)
+
+    return normalizeBaseUrl(basePath || '/')
+  }
+
+  return normalizeBaseUrl(fallbackBaseUrl)
+}
+
+function getResourceDirectory(assetPath) {
+  const normalizedPath = `${assetPath ?? ''}`.replace(/\\/g, '/')
+  const lastSlashIndex = normalizedPath.lastIndexOf('/')
+
+  if (lastSlashIndex === -1) {
+    return ''
+  }
+
+  return normalizedPath.slice(0, lastSlashIndex + 1)
+}
+
+function getAssetDisplayLabel(assetPath) {
+  const normalizedPath = `${assetPath ?? ''}`.replace(/\\/g, '/')
+  const rawLabel = normalizedPath.split('/').pop() ?? normalizedPath
+
+  try {
+    return decodeURIComponent(rawLabel)
+  } catch {
+    return rawLabel
+  }
+}
+
+function formatTransferSize(bytes) {
+  const safeBytes = Number.isFinite(bytes) ? Math.max(bytes, 0) : 0
+
+  if (safeBytes >= 1024 * 1024 * 1024) {
+    return `${(safeBytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+  }
+
+  if (safeBytes >= 1024 * 1024) {
+    return `${(safeBytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  if (safeBytes >= 1024) {
+    return `${(safeBytes / 1024).toFixed(1)} KB`
+  }
+
+  return `${Math.round(safeBytes)} B`
+}
+
+function formatTransferSpeed(bytesPerSecond) {
+  return `${formatTransferSize(bytesPerSecond)}/s`
+}
+
+function createInitialLoadingState(hasRenderableModel) {
+  return {
+    phase: hasRenderableModel ? '正在准备模型与贴图资源…' : '正在等待当前选中的模型…',
+    progress: 0,
+    downloadedBytes: 0,
+    totalBytes: 0,
+    loadedItems: 0,
+    totalItems: 0,
+    speedBytesPerSecond: 0,
+    activeLabel: '',
+    hasKnownTotal: false
   }
 }
 
@@ -239,6 +386,107 @@ function createReflectionEnvironmentScene() {
       disposables.forEach((resource) => resource.dispose?.())
       environmentScene.clear()
     }
+  }
+}
+
+function createInteriorSkySphere() {
+  const canvas = document.createElement('canvas')
+  canvas.width = 2048
+  canvas.height = 1024
+
+  const context = canvas.getContext('2d')
+  if (!context) {
+    return null
+  }
+
+  const { width, height } = canvas
+  const skyGradient = context.createLinearGradient(0, 0, 0, height)
+  skyGradient.addColorStop(0, '#7fc8ff')
+  skyGradient.addColorStop(0.38, '#a8dcff')
+  skyGradient.addColorStop(0.72, '#d5efff')
+  skyGradient.addColorStop(1, '#eef8ff')
+  context.fillStyle = skyGradient
+  context.fillRect(0, 0, width, height)
+
+  const glowGradient = context.createRadialGradient(
+    width * 0.74,
+    height * 0.22,
+    width * 0.03,
+    width * 0.74,
+    height * 0.22,
+    width * 0.24
+  )
+  glowGradient.addColorStop(0, 'rgba(255, 253, 245, 0.72)')
+  glowGradient.addColorStop(0.45, 'rgba(255, 251, 240, 0.28)')
+  glowGradient.addColorStop(1, 'rgba(255, 251, 240, 0)')
+  context.fillStyle = glowGradient
+  context.fillRect(0, 0, width, height)
+
+  const hazeGradient = context.createLinearGradient(0, height * 0.56, 0, height)
+  hazeGradient.addColorStop(0, 'rgba(255, 255, 255, 0)')
+  hazeGradient.addColorStop(1, 'rgba(255, 255, 255, 0.36)')
+  context.fillStyle = hazeGradient
+  context.fillRect(0, height * 0.56, width, height * 0.44)
+
+  const drawCloud = (centerX, centerY, cloudWidth, cloudHeight, alpha) => {
+    const puffs = [
+      [-0.28, 0.08, 0.26],
+      [-0.08, -0.06, 0.31],
+      [0.18, -0.03, 0.29],
+      [0.38, 0.1, 0.22]
+    ]
+
+    puffs.forEach(([offsetX, offsetY, scale]) => {
+      const radius = cloudWidth * scale
+      const puffX = centerX + cloudWidth * offsetX
+      const puffY = centerY + cloudHeight * offsetY
+      const puff = context.createRadialGradient(
+        puffX,
+        puffY,
+        radius * 0.1,
+        puffX,
+        puffY,
+        radius
+      )
+      puff.addColorStop(0, `rgba(255, 255, 255, ${alpha})`)
+      puff.addColorStop(0.55, `rgba(255, 255, 255, ${alpha * 0.76})`)
+      puff.addColorStop(1, 'rgba(255, 255, 255, 0)')
+      context.fillStyle = puff
+      context.fillRect(puffX - radius, puffY - radius, radius * 2, radius * 2)
+    })
+  }
+
+  ;[
+    [width * 0.18, height * 0.21, width * 0.16, height * 0.09, 0.82],
+    [width * 0.42, height * 0.28, width * 0.19, height * 0.1, 0.74],
+    [width * 0.72, height * 0.18, width * 0.17, height * 0.09, 0.78],
+    [width * 0.86, height * 0.33, width * 0.14, height * 0.08, 0.68],
+    [width * 0.3, height * 0.46, width * 0.23, height * 0.12, 0.54],
+    [width * 0.64, height * 0.52, width * 0.2, height * 0.1, 0.5]
+  ].forEach((cloud) => drawCloud(...cloud))
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.needsUpdate = true
+
+  const geometry = new THREE.SphereGeometry(260, 64, 32)
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    side: THREE.BackSide,
+    depthWrite: false,
+    fog: false,
+    toneMapped: false
+  })
+
+  const mesh = new THREE.Mesh(geometry, material)
+  mesh.visible = false
+  mesh.renderOrder = -1000
+
+  return {
+    mesh,
+    geometry,
+    material,
+    texture
   }
 }
 
@@ -430,9 +678,13 @@ export default function ShipScene({
   modelConfig,
   focusTarget = 'overview',
   colorConfig = null,
-  overviewZoomScale = 1
+  overviewZoomScale = 1,
+  viewTogglePortalTarget = null
 }) {
-  const assetBaseUrl = import.meta.env.BASE_URL
+  const assetBaseUrl = getStaticAssetBaseUrl(
+    import.meta.env.VITE_STATIC_ASSET_ORIGIN,
+    import.meta.env.BASE_URL
+  )
   const resolveAssetPath = (relativePath) => `${assetBaseUrl}${relativePath}`
   const resolveManifestPath = (assetPath) => {
     if (!assetPath) {
@@ -450,14 +702,22 @@ export default function ShipScene({
     return `${assetBaseUrl}${assetPath}`
   }
 
-  const modelId = modelConfig?.id ?? 'TwoLayerBoat'
+  const modelId = modelConfig?.id ?? ''
   const waterTuning = getWaterTuning(modelId)
   const compositeParts = modelConfig?.parts ?? EMPTY_ARRAY
   const hasCompositeParts = compositeParts.length > 0
-  const modelFormat = (modelConfig?.model?.format ?? 'glb').toLowerCase()
-  const modelPath = modelConfig?.model?.path
-    ? resolveManifestPath(modelConfig.model.path)
-    : resolveAssetPath('gltf/TwoLayerBoat/TwoLayerBoat.glb')
+  const shouldUseSinglePartCompositeFallback = !modelConfig?.model?.path && compositeParts.length === 1
+  const effectiveModelConfig = shouldUseSinglePartCompositeFallback
+    ? compositeParts[0]?.model ?? null
+    : modelConfig?.model ?? null
+  const effectiveUvSets = shouldUseSinglePartCompositeFallback
+    ? compositeParts[0]?.uvSets ?? EMPTY_ARRAY
+    : modelConfig?.uvSets ?? EMPTY_ARRAY
+  const hasRenderableModel = Boolean(effectiveModelConfig?.path || hasCompositeParts)
+  const modelFormat = (effectiveModelConfig?.format ?? 'glb').toLowerCase()
+  const modelPath = effectiveModelConfig?.path
+    ? resolveManifestPath(effectiveModelConfig.path)
+    : ''
   const isTwoLayerBoat = modelId === 'TwoLayerBoat'
   const isStudioLook = isStudioLookModel(modelId)
   const baseExteriorCameraPreset = getExteriorCameraPreset(modelId)
@@ -482,7 +742,7 @@ export default function ShipScene({
     : modelPath
   const effectiveModelFormat = isTwoLayerBoat ? 'glb' : modelFormat
   // ===== TwoLayerBoat Locked Block END =====
-  const uvSets = modelConfig?.uvSets ?? EMPTY_ARRAY
+  const uvSets = effectiveUvSets
 
   const canvasRef = useRef(null)
   const controlsRef = useRef(null)
@@ -492,9 +752,12 @@ export default function ShipScene({
   const setViewPresetRef = useRef(() => {})
   const setFocusTargetRef = useRef(() => {})
   const setColorConfigRef = useRef(() => {})
+  const loadingOverlayTimerRef = useRef(null)
   const [activeView, setActiveView] = useState('exterior')
   const [activeDeck, setActiveDeck] = useState('1')
   const [isSceneLoading, setIsSceneLoading] = useState(true)
+  const [loadingState, setLoadingState] = useState(() => createInitialLoadingState(hasRenderableModel))
+  const [isLoadingHudVisible, setIsLoadingHudVisible] = useState(true)
   const [sceneError, setSceneError] = useState('')
 
   useEffect(() => {
@@ -503,9 +766,23 @@ export default function ShipScene({
       return undefined
     }
 
+    if (!hasRenderableModel) {
+      setIsSceneLoading(true)
+      setSceneError('')
+      setLoadingState(createInitialLoadingState(false))
+      setIsLoadingHudVisible(true)
+      return undefined
+    }
+
     let isDisposed = false
+    if (loadingOverlayTimerRef.current) {
+      window.clearTimeout(loadingOverlayTimerRef.current)
+      loadingOverlayTimerRef.current = null
+    }
     setIsSceneLoading(true)
     setSceneError('')
+    setIsLoadingHudVisible(true)
+    const abortController = new AbortController()
 
     const scene = new THREE.Scene()
     const presentationRoot = new THREE.Group()
@@ -513,8 +790,12 @@ export default function ShipScene({
     const waterRoot = new THREE.Group()
     const stageRoot = new THREE.Group()
     const waterSurface = shouldShowWaterSurface ? createWaterSurface() : null
+    const interiorSkySphere = createInteriorSkySphere()
     scene.add(presentationRoot)
     presentationRoot.add(stageRoot, waterRoot, modelRoot)
+    if (interiorSkySphere) {
+      scene.add(interiorSkySphere.mesh)
+    }
 
     const exteriorCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.005, 5000)
     const interiorCamera = new THREE.PerspectiveCamera(56, 1, isStudioLook ? 0.02 : 0.005, 5000)
@@ -679,6 +960,9 @@ export default function ShipScene({
       if (waterSurface) {
         waterSurface.mesh.visible = mode === 'exterior'
       }
+      if (interiorSkySphere) {
+        interiorSkySphere.mesh.visible = mode === 'interior'
+      }
 
       if (mode === 'interior') {
         activeCamera = interiorCamera
@@ -719,14 +1003,285 @@ export default function ShipScene({
     const fbxLoader = new FBXLoader()
     const textureLoader = new THREE.TextureLoader()
     const externalTextures = []
+    const texturePromiseCache = new Map()
+    const trackedAssetUrls = (() => {
+      const assetUrls = []
+      const pushAssetUrl = (assetPath, resolver = resolveManifestPath) => {
+        if (!assetPath) {
+          return
+        }
 
-    const loadTextureAsync = (path) => new Promise((resolve, reject) => {
-      textureLoader.load(path, resolve, undefined, reject)
+        assetUrls.push(resolver(assetPath))
+      }
+      const pushUvTextureUrls = (targetUvSets) => {
+        targetUvSets.forEach((uvSet) => {
+          Object.values(uvSet?.textures ?? {}).forEach((assetPath) => {
+            pushAssetUrl(assetPath)
+          })
+        })
+      }
+
+      if (hasCompositeParts) {
+        compositeParts.forEach((part) => {
+          pushAssetUrl(part?.model?.path)
+          pushUvTextureUrls(part?.uvSets ?? EMPTY_ARRAY)
+        })
+      } else {
+        pushAssetUrl(effectiveModelPath, (value) => value)
+        if (isTwoLayerBoat) {
+          TWO_LAYER_TRACKED_TEXTURE_PATHS.forEach((assetPath) => {
+            pushAssetUrl(assetPath, resolveAssetPath)
+          })
+        } else {
+          pushUvTextureUrls(uvSets)
+        }
+      }
+
+      return [...new Set(assetUrls.filter(Boolean))]
+    })()
+    const assetProgressMap = new Map(
+      trackedAssetUrls.map((assetUrl) => [
+        assetUrl,
+        {
+          loadedBytes: 0,
+          totalBytes: 0,
+          completed: false
+        }
+      ])
+    )
+    const speedSamples = []
+    let totalLoadedBytes = 0
+    let totalExpectedBytes = 0
+    let completedAssetCount = 0
+    let progressFrameId = 0
+    let progressFloor = 0
+    let currentLoadingPhase = trackedAssetUrls.length > 0
+      ? '正在下载模型与贴图资源…'
+      : '正在准备模型与贴图资源…'
+    let currentAssetLabel = trackedAssetUrls[0] ? getAssetDisplayLabel(trackedAssetUrls[0]) : ''
+
+    setLoadingState({
+      ...createInitialLoadingState(true),
+      phase: currentLoadingPhase,
+      totalItems: trackedAssetUrls.length,
+      activeLabel: currentAssetLabel
     })
 
+    const computeDownloadSpeed = () => {
+      const sampleCount = speedSamples.length
+      if (sampleCount < 2) {
+        return 0
+      }
+
+      const firstSample = speedSamples[0]
+      const lastSample = speedSamples[sampleCount - 1]
+      const elapsedSeconds = (lastSample.time - firstSample.time) / 1000
+
+      if (elapsedSeconds <= 0) {
+        return 0
+      }
+
+      return (lastSample.bytes - firstSample.bytes) / elapsedSeconds
+    }
+
+    const pushLoadingState = (force = false) => {
+      if (isDisposed) {
+        return
+      }
+
+      const runUpdate = () => {
+        progressFrameId = 0
+        const byteProgress = totalExpectedBytes > 0 ? totalLoadedBytes / totalExpectedBytes : 0
+        const itemProgress = trackedAssetUrls.length > 0 ? completedAssetCount / trackedAssetUrls.length : 0
+        const nextProgress = totalExpectedBytes > 0 ? byteProgress : itemProgress
+        if (completedAssetCount >= trackedAssetUrls.length && trackedAssetUrls.length > 0) {
+          progressFloor = 1
+        } else {
+          progressFloor = Math.max(progressFloor, nextProgress)
+        }
+
+        setLoadingState({
+          phase: currentLoadingPhase,
+          progress: trackedAssetUrls.length > 0 ? Math.min(progressFloor, 1) : 0,
+          downloadedBytes: totalLoadedBytes,
+          totalBytes: totalExpectedBytes,
+          loadedItems: completedAssetCount,
+          totalItems: trackedAssetUrls.length,
+          speedBytesPerSecond: computeDownloadSpeed(),
+          activeLabel: currentAssetLabel,
+          hasKnownTotal: totalExpectedBytes > 0
+        })
+      }
+
+      if (force) {
+        if (progressFrameId) {
+          window.cancelAnimationFrame(progressFrameId)
+          progressFrameId = 0
+        }
+        runUpdate()
+        return
+      }
+
+      if (progressFrameId) {
+        return
+      }
+
+      progressFrameId = window.requestAnimationFrame(runUpdate)
+    }
+
+    const noteDownloadedBytes = (deltaBytes) => {
+      if (!Number.isFinite(deltaBytes) || deltaBytes <= 0) {
+        return
+      }
+
+      totalLoadedBytes += deltaBytes
+      const now = performance.now()
+      speedSamples.push({
+        time: now,
+        bytes: totalLoadedBytes
+      })
+
+      while (speedSamples.length > 0 && now - speedSamples[0].time > 1800) {
+        speedSamples.shift()
+      }
+
+      pushLoadingState()
+    }
+
+    const setAssetExpectedBytes = (assetUrl, totalBytes) => {
+      const assetState = assetProgressMap.get(assetUrl)
+      if (!assetState) {
+        return
+      }
+
+      if (!Number.isFinite(totalBytes) || totalBytes <= 0) {
+        return
+      }
+
+      totalExpectedBytes += totalBytes - assetState.totalBytes
+      assetState.totalBytes = totalBytes
+      if (assetState.completed && assetState.loadedBytes < totalBytes) {
+        const deltaBytes = totalBytes - assetState.loadedBytes
+        assetState.loadedBytes = totalBytes
+        noteDownloadedBytes(deltaBytes)
+        return
+      }
+      pushLoadingState()
+    }
+
+    const markAssetCompleted = (assetUrl, phase) => {
+      const assetState = assetProgressMap.get(assetUrl)
+      if (!assetState || assetState.completed) {
+        return
+      }
+
+      assetState.completed = true
+      completedAssetCount += 1
+      currentLoadingPhase = completedAssetCount >= trackedAssetUrls.length && trackedAssetUrls.length > 0
+        ? '正在整理场景与材质…'
+        : phase
+      currentAssetLabel = getAssetDisplayLabel(assetUrl)
+      pushLoadingState(true)
+    }
+
+    const beginTrackedAsset = (assetUrl, phase) => {
+      if (!assetProgressMap.has(assetUrl)) {
+        assetProgressMap.set(assetUrl, {
+          loadedBytes: 0,
+          totalBytes: 0,
+          completed: false
+        })
+      }
+
+      currentLoadingPhase = phase
+      currentAssetLabel = getAssetDisplayLabel(assetUrl)
+      pushLoadingState()
+      return assetProgressMap.get(assetUrl)
+    }
+
+    const estimateAssetSizes = () => {
+      trackedAssetUrls.forEach((assetUrl) => {
+        fetch(assetUrl, {
+          method: 'HEAD',
+          signal: abortController.signal
+        })
+          .then((response) => {
+            if (!response.ok) {
+              return
+            }
+
+            const contentLength = Number.parseInt(response.headers.get('content-length') ?? '', 10)
+            if (Number.isFinite(contentLength) && contentLength > 0) {
+              setAssetExpectedBytes(assetUrl, contentLength)
+            }
+          })
+          .catch(() => {})
+      })
+    }
+
+    estimateAssetSizes()
+
+    const loadTextureAsync = (path) => {
+      if (texturePromiseCache.has(path)) {
+        return texturePromiseCache.get(path)
+      }
+
+      const texturePromise = new Promise((resolve, reject) => {
+        const assetState = beginTrackedAsset(path, '正在下载贴图资源…')
+
+        textureLoader.load(
+          path,
+          (texture) => {
+            if (assetState.totalBytes > assetState.loadedBytes) {
+              const deltaBytes = assetState.totalBytes - assetState.loadedBytes
+              assetState.loadedBytes = assetState.totalBytes
+              noteDownloadedBytes(deltaBytes)
+            }
+            markAssetCompleted(path, '正在下载贴图资源…')
+            resolve(texture)
+          },
+          undefined,
+          reject
+        )
+      })
+
+      texturePromiseCache.set(path, texturePromise)
+      return texturePromise
+    }
+
     const loadModelAsync = ({ format, path }) => new Promise((resolve, reject) => {
+      const assetState = beginTrackedAsset(path, '正在下载模型文件…')
+      const handleProgress = (event) => {
+        if (!event) {
+          return
+        }
+
+        if (event.total) {
+          setAssetExpectedBytes(path, event.total)
+        }
+
+        const nextLoadedBytes = Number.isFinite(event.loaded) ? event.loaded : 0
+        const deltaBytes = nextLoadedBytes - assetState.loadedBytes
+        assetState.loadedBytes = nextLoadedBytes
+        noteDownloadedBytes(deltaBytes)
+      }
+      const handleComplete = (object3d) => {
+        if (assetState.totalBytes > assetState.loadedBytes) {
+          const deltaBytes = assetState.totalBytes - assetState.loadedBytes
+          assetState.loadedBytes = assetState.totalBytes
+          noteDownloadedBytes(deltaBytes)
+        }
+        markAssetCompleted(path, '正在下载模型文件…')
+        resolve(object3d)
+      }
+
       if (format === 'fbx') {
-        fbxLoader.load(path, (object3d) => resolve(object3d), undefined, reject)
+        fbxLoader.load(
+          path,
+          (object3d) => handleComplete(object3d),
+          handleProgress,
+          reject
+        )
         return
       }
 
@@ -738,9 +1293,9 @@ export default function ShipScene({
             reject(new Error(`${modelId} does not contain a scene root.`))
             return
           }
-          resolve(object3d)
+          handleComplete(object3d)
         },
-        undefined,
+        handleProgress,
         reject
       )
     })
@@ -769,6 +1324,69 @@ export default function ShipScene({
       })
     }
 
+    const normalizeUvSetRenderProfile = (profile = {}) => ({
+      alphaMode: `${profile?.alphaMode ?? ''}`.trim().toLowerCase(),
+      side: `${profile?.side ?? ''}`.trim().toLowerCase(),
+      depthWrite: `${profile?.depthWrite ?? ''}`.trim().toLowerCase(),
+      depthTest: `${profile?.depthTest ?? ''}`.trim().toLowerCase(),
+      alphaCutoff:
+        Number.isFinite(Number(profile?.alphaCutoff)) && Number(profile?.alphaCutoff) > 0
+          ? Number(profile.alphaCutoff)
+          : 0,
+      renderOrder:
+        Number.isFinite(Number(profile?.renderOrder))
+          ? Math.trunc(Number(profile.renderOrder))
+          : null
+    })
+
+    const applyUvSetRenderProfileToMaterial = (material, renderProfile = {}, context = {}) => {
+      const normalizedProfile = normalizeUvSetRenderProfile(renderProfile)
+      const hasOpacityTexture = Boolean(context.maps?.opacity)
+      const useBaseColorAlpha = context.textureOptions?.baseColor?.useAlphaAsOpacity === true
+
+      if (normalizedProfile.alphaMode === UV_SET_ALPHA_MODE_OPAQUE) {
+        material.transparent = false
+        material.alphaTest = 0
+        material.opacity = 1
+        material.alphaMap = null
+      } else if (normalizedProfile.alphaMode === UV_SET_ALPHA_MODE_CUTOUT) {
+        material.transparent = false
+        material.opacity = 1
+        material.alphaTest = normalizedProfile.alphaCutoff || Math.max(material.alphaTest ?? 0, 0.02)
+      } else if (normalizedProfile.alphaMode === UV_SET_ALPHA_MODE_BLEND) {
+        material.transparent = hasOpacityTexture || useBaseColorAlpha || material.transparent
+        material.opacity = 1
+        material.alphaTest = normalizedProfile.alphaCutoff || Math.max(material.alphaTest ?? 0, 0.02)
+      } else if (normalizedProfile.alphaCutoff > 0 && (hasOpacityTexture || useBaseColorAlpha || material.transparent)) {
+        material.alphaTest = normalizedProfile.alphaCutoff
+      }
+
+      if (normalizedProfile.side === UV_SET_SIDE_FRONT) {
+        material.side = THREE.FrontSide
+      } else if (normalizedProfile.side === UV_SET_SIDE_DOUBLE) {
+        material.side = THREE.DoubleSide
+      }
+
+      if (normalizedProfile.depthWrite === UV_SET_DEPTH_WRITE_ON) {
+        material.depthWrite = true
+      } else if (normalizedProfile.depthWrite === UV_SET_DEPTH_WRITE_OFF) {
+        material.depthWrite = false
+      }
+
+      if (normalizedProfile.depthTest === UV_SET_DEPTH_TEST_ON) {
+        material.depthTest = true
+      } else if (normalizedProfile.depthTest === UV_SET_DEPTH_TEST_OFF) {
+        material.depthTest = false
+      }
+
+      if (normalizedProfile.renderOrder !== null && context.child) {
+        context.child.renderOrder = normalizedProfile.renderOrder
+      }
+
+      material.needsUpdate = true
+      return material
+    }
+
     const createPbrMaterial = (material) => {
       const upgradedMaterial = new THREE.MeshStandardMaterial({
         name: material?.name || '',
@@ -794,6 +1412,9 @@ export default function ShipScene({
       }
       if (material?.normalMap) {
         upgradedMaterial.normalMap = material.normalMap
+      }
+      if (material?.alphaMap) {
+        upgradedMaterial.alphaMap = material.alphaMap
       }
       if (material?.aoMap) {
         upgradedMaterial.aoMap = material.aoMap
@@ -842,6 +1463,9 @@ export default function ShipScene({
       if (material?.normalMap) {
         upgradedMaterial.normalMap = material.normalMap
       }
+      if (material?.alphaMap) {
+        upgradedMaterial.alphaMap = material.alphaMap
+      }
       if (material?.aoMap) {
         upgradedMaterial.aoMap = material.aoMap
       }
@@ -879,7 +1503,11 @@ export default function ShipScene({
     }
 
     const applyMapsToMaterial = (material, maps, options = {}) => {
-      const { canUseUvMaps = true } = options
+      const {
+        canUseUvMaps = true,
+        textureOptions = {}
+      } = options
+      const shouldUseBaseColorAlpha = textureOptions.baseColor?.useAlphaAsOpacity === true
 
       if (maps.baseColor && canUseUvMaps) {
         if (material.color) {
@@ -895,6 +1523,14 @@ export default function ShipScene({
         material.normalMap = maps.normal
         material.normalScale = new THREE.Vector2(1, -1)
       }
+      if (maps.orm && canUseUvMaps) {
+        material.aoMap = maps.orm
+        material.aoMapIntensity = 0.72
+        material.roughnessMap = maps.orm
+        material.roughness = 1
+        material.metalnessMap = maps.orm
+        material.metalness = 1
+      }
       if (maps.ao && canUseUvMaps) {
         material.aoMap = maps.ao
         material.aoMapIntensity = 0.72
@@ -906,6 +1542,17 @@ export default function ShipScene({
       if (maps.roughness && canUseUvMaps) {
         material.roughnessMap = maps.roughness
         material.roughness = 1
+      }
+      if (maps.opacity && canUseUvMaps) {
+        material.alphaMap = maps.opacity
+      }
+      if ((maps.opacity || shouldUseBaseColorAlpha) && canUseUvMaps) {
+        material.transparent = true
+        material.opacity = 1
+        material.alphaTest = Math.max(material.alphaTest ?? 0, 0.02)
+        material.depthWrite = true
+        material.depthTest = true
+        material.side = THREE.DoubleSide
       }
       if ('envMapIntensity' in material) {
         material.envMapIntensity = Math.max(material.envMapIntensity ?? 0, 1.28)
@@ -989,13 +1636,20 @@ export default function ShipScene({
         return applyLiuYunGlassFinish(material)
       }
 
+      const shouldKeepTransparency =
+        context.maps?.opacity ||
+        context.textureOptions?.baseColor?.useAlphaAsOpacity === true
+
       const targetMaterial = material?.isMeshPhysicalMaterial ? material : createPhysicalMaterial(material)
 
       // LiuYun 的 mt BaseColor 虽然带 alpha，但当前更像是导出残留；
       // 若整组开启透明会导致排序和穿帮，因此先按不透明材质处理。
-      targetMaterial.transparent = false
-      targetMaterial.alphaTest = 0
+      targetMaterial.transparent = shouldKeepTransparency
+      targetMaterial.alphaTest = shouldKeepTransparency
+        ? Math.max(targetMaterial.alphaTest ?? 0, 0.02)
+        : 0
       targetMaterial.depthWrite = true
+      targetMaterial.depthTest = true
       targetMaterial.side = THREE.DoubleSide
       targetMaterial.metalness = targetMaterial.metalnessMap ? 0.22 : 0.08
       targetMaterial.roughness = targetMaterial.roughnessMap ? 0.88 : 0.52
@@ -1005,12 +1659,45 @@ export default function ShipScene({
       return targetMaterial
     }
 
+    const collectRuntimeMaterialSlots = (rootObject) => {
+      const materialSlots = new Map()
+
+      rootObject.traverse((child) => {
+        if (!child.isMesh || !child.material) {
+          return
+        }
+
+        const materials = Array.isArray(child.material) ? child.material : [child.material]
+        materials.forEach((material) => {
+          const name = `${material?.name ?? ''}`.trim()
+          const normalizedName = normalizeMaterialName(name)
+          if (!normalizedName || materialSlots.has(normalizedName)) {
+            return
+          }
+
+          materialSlots.set(normalizedName, name)
+        })
+      })
+
+      return Array.from(materialSlots, ([normalizedName, name]) => ({ normalizedName, name }))
+    }
+
     const applyUvSetMaps = (rootObject, uvSet, maps, options = {}) => {
       const hint = uvSet.materialNameHint
       const normalizedHint = normalizeMaterialName(hint)
-      const { materialTransform = null } = options
+      const {
+        materialTransform = null,
+        textureOptions = {},
+        renderProfile = {},
+        allowSingleMaterialFallback = false
+      } = options
       let appliedCount = 0
       let skippedMeshCount = 0
+      const runtimeMaterialSlots = hint ? collectRuntimeMaterialSlots(rootObject) : []
+      const hintMatchesRuntimeSlot = !hint || runtimeMaterialSlots.some((slot) => slot.normalizedName === normalizedHint)
+      const singleMaterialFallbackSlot = allowSingleMaterialFallback && hint && !hintMatchesRuntimeSlot && runtimeMaterialSlots.length === 1
+        ? runtimeMaterialSlots[0]
+        : null
 
       rootObject.traverse((child) => {
         if (!child.isMesh || !child.material) {
@@ -1020,25 +1707,53 @@ export default function ShipScene({
         const hasUv = ensureAoUv(child)
         const materials = Array.isArray(child.material) ? child.material : [child.material]
         const updatedMaterials = materials.map((material) => {
-          let targetMaterial = getMaterialForUvMaps(material, options)
           const normalizedMaterialName = normalizeMaterialName(material?.name)
-          if (hint && normalizedMaterialName !== normalizedHint) {
-            return targetMaterial
+          const matchesMaterialHint = !hint || normalizedMaterialName === normalizedHint
+          const matchesSingleMaterialFallback =
+            singleMaterialFallbackSlot && normalizedMaterialName === singleMaterialFallbackSlot.normalizedName
+          if (!matchesMaterialHint && !matchesSingleMaterialFallback) {
+            return material
           }
+
+          let targetMaterial = getMaterialForUvMaps(material, options)
 
           if (!hasUv) {
             skippedMeshCount += 1
-            applyMapsToMaterial(targetMaterial, maps, { canUseUvMaps: false })
+            applyMapsToMaterial(targetMaterial, maps, { canUseUvMaps: false, textureOptions })
             if (materialTransform) {
-              targetMaterial = materialTransform(targetMaterial, { child, uvSet, normalizedMaterialName })
+              targetMaterial = materialTransform(targetMaterial, {
+                child,
+                uvSet,
+                normalizedMaterialName,
+                maps,
+                textureOptions
+              })
             }
+            targetMaterial = applyUvSetRenderProfileToMaterial(targetMaterial, renderProfile, {
+              child,
+              uvSet,
+              maps,
+              textureOptions
+            })
             return targetMaterial
           }
 
-          applyMapsToMaterial(targetMaterial, maps, { canUseUvMaps: true })
+          applyMapsToMaterial(targetMaterial, maps, { canUseUvMaps: true, textureOptions })
           if (materialTransform) {
-            targetMaterial = materialTransform(targetMaterial, { child, uvSet, normalizedMaterialName })
-          }
+            targetMaterial = materialTransform(targetMaterial, {
+              child,
+              uvSet,
+              normalizedMaterialName,
+                maps,
+                textureOptions
+              })
+            }
+          targetMaterial = applyUvSetRenderProfileToMaterial(targetMaterial, renderProfile, {
+            child,
+            uvSet,
+            maps,
+            textureOptions
+          })
           appliedCount += 1
           return targetMaterial
         })
@@ -1135,12 +1850,18 @@ export default function ShipScene({
 
     const loadAndApplyUvMaps = async (rootObject, targetUvSets, targetModelFormat, targetLabel) => {
       const shouldFlipY = targetModelFormat !== 'fbx'
+      const texturedUvSetCount = targetUvSets
+        .filter((uvSet) => Object.keys(uvSet.textures ?? {}).some((textureType) => Boolean(uvSet.textures?.[textureType])))
+        .length
 
       for (const uvSet of targetUvSets) {
         const textureEntries = Object.entries(uvSet.textures ?? {}).filter(([, path]) => Boolean(path))
         if (textureEntries.length === 0) {
           continue
         }
+
+        const textureOptions = uvSet.textureOptions ?? {}
+        const renderProfile = uvSet.renderProfile ?? {}
 
         const loadedTextures = await Promise.all(
           textureEntries.map(async ([type, path]) => {
@@ -1156,29 +1877,33 @@ export default function ShipScene({
         )
 
         const textureMap = Object.fromEntries(loadedTextures)
-        const materialTransform = modelId === 'FireFighting'
-          ? (
-              uvSet.id === 'tt/cc'
-                ? applyFireFightingCcClearcoat
-                : uvSet.id === 'tt/langan'
-                  ? applyFireFightingRailingTransparency
-                  : null
-            )
-          : modelId === 'LiuYun' && uvSet.id === 'mt'
-            ? applyLiuYunOpaqueFinish
-            : null
+        const hasExplicitRenderProfile = Object.values(uvSet.renderProfile ?? {}).some((value) => value !== '' && value !== 0 && value !== null)
+        const materialTransform = hasExplicitRenderProfile
+          ? null
+          : modelId === 'FireFighting'
+            ? (
+                uvSet.id === 'tt/cc'
+                  ? applyFireFightingCcClearcoat
+                  : uvSet.id === 'tt/langan'
+                    ? applyFireFightingRailingTransparency
+                    : null
+              )
+            : modelId === 'LiuYun' && uvSet.id === 'mt'
+              ? applyLiuYunOpaqueFinish
+              : null
         const initialResult = applyUvSetMaps(rootObject, uvSet, textureMap, {
           preferPbrFinish: targetModelFormat === 'fbx',
-          materialTransform
+          materialTransform,
+          textureOptions,
+          renderProfile,
+          allowSingleMaterialFallback: texturedUvSetCount === 1
         })
         if (initialResult.appliedCount === 0) {
-          // 当材质名提示未命中时，回退为整模型应用，避免贴图完全不生效。
-          const fallbackResult = applyUvSetMaps(rootObject, { ...uvSet, materialNameHint: null }, textureMap, {
-            preferPbrFinish: targetModelFormat === 'fbx',
-            materialTransform
-          })
-          if (fallbackResult.appliedCount === 0 && fallbackResult.skippedMeshCount > 0) {
+          // 多材质模型如果提示未命中，宁可保留原材质，也不要把整套贴图错误铺满整船。
+          if (initialResult.skippedMeshCount > 0) {
             console.warn(`Skipped UV texture application for ${targetLabel}/${uvSet.id}: model meshes do not contain UV coordinates.`)
+          } else {
+            console.warn(`Skipped UV texture application for ${targetLabel}/${uvSet.id}: material name hint did not match any runtime material slot.`)
           }
         } else if (initialResult.skippedMeshCount > 0) {
           console.warn(`Partially skipped UV texture application for ${targetLabel}/${uvSet.id}: some meshes do not contain UV coordinates.`)
@@ -1252,20 +1977,6 @@ export default function ShipScene({
             child.material = glassMaterial
           }
         }
-      })
-    }
-
-    const applyDoubleSidedMaterials = (rootObject) => {
-      rootObject.traverse((child) => {
-        if (!child.isMesh || !child.material) {
-          return
-        }
-
-        const materials = Array.isArray(child.material) ? child.material : [child.material]
-        materials.forEach((material) => {
-          material.side = THREE.DoubleSide
-          material.needsUpdate = true
-        })
       })
     }
 
@@ -1437,6 +2148,88 @@ export default function ShipScene({
       })
     }
 
+    const applyCabnetTwinEngineFinish = (rootObject) => {
+      const enginePreset = {
+        color: '#8e9db3',
+        metalness: 0.92,
+        roughness: 0.28,
+        aoMapIntensity: 0.24,
+        envMapIntensity: 2.05
+      }
+
+      rootObject.traverse((child) => {
+        if (!child.isMesh || !child.material) {
+          return
+        }
+
+        ensureAoUv(child)
+        updateMeshMaterials(child, (material) => applyStudioMaterialPreset(material, enginePreset))
+      })
+    }
+
+    const addConfiguredEnginesAsync = async (rootObject) => {
+      const configuredEngines = Array.isArray(modelConfig?.engines)
+        ? modelConfig.engines.filter((engine) => engine?.enabled).slice(0, 4)
+        : []
+
+      if (configuredEngines.length === 0) {
+        return
+      }
+
+      const engineGroup = new THREE.Group()
+      engineGroup.name = `${modelId}ConfiguredEngines`
+
+      for (const [engineIndex, engineConfig] of configuredEngines.entries()) {
+        const engineType = `${engineConfig?.type ?? 'outboard-a'}`.trim() || 'outboard-a'
+        const engineLibraryEntry = ENGINE_MODEL_LIBRARY[engineType] ?? ENGINE_MODEL_LIBRARY['outboard-a']
+        const engineObject = await loadModelAsync({
+          format: engineLibraryEntry.format,
+          path: resolveManifestPath(engineLibraryEntry.path)
+        })
+
+        applyMeshShadowFlags(engineObject)
+
+        try {
+          await loadAndApplyUvMaps(
+            engineObject,
+            engineLibraryEntry.uvSets,
+            engineLibraryEntry.format,
+            `${modelId}/engine-${engineIndex + 1}`
+          )
+        } catch (error) {
+          console.error(`Failed to load configured engine textures for ${modelId}:`, error)
+        }
+
+        applyCabnetTwinEngineFinish(engineObject)
+
+        const boatBounds = new THREE.Box3().setFromObject(rootObject)
+        const boatSize = boatBounds.getSize(new THREE.Vector3())
+        const engineBounds = new THREE.Box3().setFromObject(engineObject)
+        const engineCenter = engineBounds.getCenter(new THREE.Vector3())
+        const engineSize = engineBounds.getSize(new THREE.Vector3())
+
+        engineObject.position.sub(engineCenter)
+
+        const targetEngineHeight = Math.max(boatSize.y * (engineLibraryEntry.targetHeightScale ?? 0.34), 0.01)
+        const scaleFactor = engineSize.y > 0 ? targetEngineHeight / engineSize.y : 1
+        engineObject.scale.multiplyScalar(scaleFactor)
+        engineObject.rotation.set(
+          Number(engineConfig?.rotation?.x ?? 0) || 0,
+          Number(engineConfig?.rotation?.y ?? 0) || 0,
+          Number(engineConfig?.rotation?.z ?? 0) || 0
+        )
+        engineObject.position.set(
+          Number(engineConfig?.position?.x ?? 0) || 0,
+          Number(engineConfig?.position?.y ?? 0) || 0,
+          Number(engineConfig?.position?.z ?? 0) || 0
+        )
+
+        engineGroup.add(engineObject)
+      }
+
+      rootObject.add(engineGroup)
+    }
+
     const loadCompositeModelAsync = async () => {
       if (!hasCompositeParts) {
         const object3d = await loadModelAsync({
@@ -1444,6 +2237,7 @@ export default function ShipScene({
           path: effectiveModelPath
         })
         applyMeshShadowFlags(object3d)
+        await addConfiguredEnginesAsync(object3d)
 
         return {
           root: object3d,
@@ -1455,12 +2249,6 @@ export default function ShipScene({
                 console.error('Failed to load fixed texture maps for TwoLayerBoat:', error)
               }
               applyTwoLayerOverrides(object3d)
-              applyDoubleSidedMaterials(object3d)
-              return
-            }
-
-            if (modelId === 'TestModel') {
-              applyDoubleSidedMaterials(object3d)
               return
             }
 
@@ -1477,7 +2265,6 @@ export default function ShipScene({
             }
 
             applyColorConfigToObject(object3d, 'full')
-            applyDoubleSidedMaterials(object3d)
           }
         }
       }
@@ -1510,7 +2297,6 @@ export default function ShipScene({
               if (modelId === 'TestHigh') {
                 applyTestHighStudioOverrides(part.object3d, part.id, partIndex)
               }
-              applyDoubleSidedMaterials(part.object3d)
               continue
             }
 
@@ -1525,7 +2311,6 @@ export default function ShipScene({
             }
 
             applyColorConfigToObject(part.object3d, getTestHighPartRole(part.id, partIndex))
-            applyDoubleSidedMaterials(part.object3d)
           }
         }
       }
@@ -1624,15 +2409,33 @@ export default function ShipScene({
 
         modelRoot.add(object3d)
         setColorConfigRef.current(colorConfig)
+        setLoadingState((previous) => ({
+          ...previous,
+          phase: '场景已就绪',
+          progress: 1,
+          downloadedBytes: Math.max(previous.downloadedBytes, previous.totalBytes),
+          loadedItems: previous.totalItems || previous.loadedItems,
+          speedBytesPerSecond: 0,
+          activeLabel: ''
+        }))
         setIsSceneLoading(false)
+        loadingOverlayTimerRef.current = window.setTimeout(() => {
+          setIsLoadingHudVisible(false)
+          loadingOverlayTimerRef.current = null
+        }, 900)
       })
       .catch((error) => {
         if (isDisposed) {
           return
         }
 
+        if (error?.name === 'AbortError') {
+          return
+        }
+
         console.error(`Failed to load ${modelId}:`, error)
         setSceneError('当前 3D 模型加载失败，请刷新后重试。')
+        setIsLoadingHudVisible(true)
         setIsSceneLoading(false)
       })
 
@@ -1656,6 +2459,9 @@ export default function ShipScene({
       if (waterSurface) {
         waterSurface.material.uniforms.uTime.value = performance.now() * 0.001
       }
+      if (interiorSkySphere?.mesh.visible) {
+        interiorSkySphere.mesh.position.copy(interiorCamera.position)
+      }
       if (modeRef.current === 'exterior') {
         controls.update()
       }
@@ -1666,6 +2472,14 @@ export default function ShipScene({
 
     return () => {
       isDisposed = true
+      if (loadingOverlayTimerRef.current) {
+        window.clearTimeout(loadingOverlayTimerRef.current)
+        loadingOverlayTimerRef.current = null
+      }
+      abortController.abort()
+      if (progressFrameId) {
+        window.cancelAnimationFrame(progressFrameId)
+      }
       window.cancelAnimationFrame(frameId)
       resizeObserver.disconnect()
       controls.dispose()
@@ -1703,6 +2517,12 @@ export default function ShipScene({
         waterSurface.geometry.dispose()
         waterSurface.material.dispose()
       }
+      if (interiorSkySphere) {
+        scene.remove(interiorSkySphere.mesh)
+        interiorSkySphere.geometry.dispose()
+        interiorSkySphere.material.dispose()
+        interiorSkySphere.texture.dispose()
+      }
 
       stageRoot.traverse((child) => {
         if (!child.isMesh) {
@@ -1719,6 +2539,7 @@ export default function ShipScene({
     compositeParts,
     effectiveModelFormat,
     effectiveModelPath,
+    hasRenderableModel,
     hasCompositeParts,
     isStudioLook,
     isTwoLayerBoat,
@@ -1757,10 +2578,49 @@ export default function ShipScene({
     setViewPresetRef.current('interior', deck)
   }
 
+  const viewToggle = hasRenderableModel ? (
+    <div className="canvas-view-toggle" aria-label="场景视角切换">
+      <div className="interior-toggle-group">
+        <button
+          type="button"
+          className={`switch-btn ${activeView === 'interior' ? 'active' : ''}`}
+          onClick={() => handleSwitchView('interior')}
+        >
+          内部
+        </button>
+        {isTwoLayerBoat && activeView === 'interior' && (
+          <div className="interior-level-toggle" aria-label="内部楼层切换">
+            <button
+              type="button"
+              className={`switch-btn switch-btn-sm ${activeDeck === '1' ? 'active' : ''}`}
+              onClick={() => handleInteriorDeckSwitch('1')}
+            >
+              一层
+            </button>
+            <button
+              type="button"
+              className={`switch-btn switch-btn-sm ${activeDeck === '2' ? 'active' : ''}`}
+              onClick={() => handleInteriorDeckSwitch('2')}
+            >
+              二层
+            </button>
+          </div>
+        )}
+      </div>
+      <button
+        type="button"
+        className={`switch-btn ${activeView === 'exterior' ? 'active' : ''}`}
+        onClick={() => handleSwitchView('exterior')}
+      >
+        外部
+      </button>
+    </div>
+  ) : null
+
   return (
     <div className={`scene-shell ${isStudioLook ? 'scene-shell-studio' : ''}`.trim()} aria-label="3D 船舶预览">
       <canvas className="webgl" ref={canvasRef} />
-      {(isSceneLoading || sceneError) && (
+      {(isLoadingHudVisible || isSceneLoading || sceneError) && (
         <div className="scene-status-overlay" aria-live="polite">
           {sceneError ? (
             <div className="scene-status-card scene-status-card-error">
@@ -1768,49 +2628,41 @@ export default function ShipScene({
               <span>{sceneError}</span>
             </div>
           ) : (
-            <div className="scene-status-card">
+            <div className="scene-status-card scene-status-card-loading">
               <strong>3D 场景加载中</strong>
-              <span>正在初始化模型与贴图资源…</span>
+              <span>{loadingState.phase}</span>
+              {hasRenderableModel && (
+                <div className="scene-progress-stack">
+                  <div className="scene-progress-meta">
+                    <span>
+                      {loadingState.hasKnownTotal
+                        ? `${formatTransferSize(loadingState.downloadedBytes)} / ${formatTransferSize(loadingState.totalBytes)}`
+                        : `${loadingState.loadedItems} / ${loadingState.totalItems || 1} 项资源`}
+                    </span>
+                    <strong>{Math.round((loadingState.progress || 0) * 100)}%</strong>
+                  </div>
+                  <div className="scene-progress-track" aria-hidden="true">
+                    <span style={{ width: `${Math.round((loadingState.progress || 0) * 100)}%` }} />
+                  </div>
+                  <div className="scene-progress-foot">
+                    <span>{`资源 ${loadingState.loadedItems} / ${loadingState.totalItems || 0}`}</span>
+                    <span>
+                      {loadingState.speedBytesPerSecond > 0
+                        ? formatTransferSpeed(loadingState.speedBytesPerSecond)
+                        : '测速中…'}
+                    </span>
+                  </div>
+                  {loadingState.activeLabel && (
+                    <p className="scene-progress-current">{`当前资源：${loadingState.activeLabel}`}</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
-      <div className="canvas-view-toggle" aria-label="场景视角切换">
-        <div className="interior-toggle-group">
-          <button
-            type="button"
-            className={`switch-btn ${activeView === 'interior' ? 'active' : ''}`}
-            onClick={() => handleSwitchView('interior')}
-          >
-            内部
-          </button>
-          {isTwoLayerBoat && activeView === 'interior' && (
-            <div className="interior-level-toggle" aria-label="内部楼层切换">
-              <button
-                type="button"
-                className={`switch-btn switch-btn-sm ${activeDeck === '1' ? 'active' : ''}`}
-                onClick={() => handleInteriorDeckSwitch('1')}
-              >
-                一层
-              </button>
-              <button
-                type="button"
-                className={`switch-btn switch-btn-sm ${activeDeck === '2' ? 'active' : ''}`}
-                onClick={() => handleInteriorDeckSwitch('2')}
-              >
-                二层
-              </button>
-            </div>
-          )}
-        </div>
-        <button
-          type="button"
-          className={`switch-btn ${activeView === 'exterior' ? 'active' : ''}`}
-          onClick={() => handleSwitchView('exterior')}
-        >
-          外部
-        </button>
-      </div>
+      {!viewTogglePortalTarget && viewToggle}
+      {viewTogglePortalTarget && viewToggle ? createPortal(viewToggle, viewTogglePortalTarget) : null}
     </div>
   )
 }

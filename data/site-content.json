@@ -1,4 +1,186 @@
 {
-  "updatedAt": "2026-03-28T16:38:01Z",
-  "videos": []
+  "updatedAt": "2026-04-29T14:44:32.049Z",
+  "videos": [],
+  "models": {
+    "40mijianchuan": {
+      "displayName": "40米趸船",
+      "type": "",
+      "specs": {
+        "overallLength": "",
+        "waterlineLength": "",
+        "beam": "",
+        "depth": "",
+        "draft": "",
+        "navigationArea": "",
+        "mainEnginePower": "",
+        "designSpeed": "",
+        "ratedCapacity": "",
+        "powerType": "",
+        "material": "",
+        "certificateType": ""
+      },
+      "detailImagePath": "tbrender.png",
+      "summary": ""
+    },
+    "Cabnet": {
+      "displayName": "",
+      "type": "",
+      "specs": {
+        "overallLength": "",
+        "waterlineLength": "",
+        "beam": "",
+        "depth": "",
+        "draft": "",
+        "navigationArea": "",
+        "mainEnginePower": "",
+        "designSpeed": "",
+        "ratedCapacity": "",
+        "powerType": "",
+        "material": "",
+        "certificateType": ""
+      },
+      "detailImagePath": "render-card.png",
+      "summary": ""
+    },
+    "FireFighting": {
+      "displayName": "",
+      "type": "",
+      "specs": {
+        "overallLength": "",
+        "waterlineLength": "",
+        "beam": "",
+        "depth": "",
+        "draft": "",
+        "navigationArea": "",
+        "mainEnginePower": "",
+        "designSpeed": "",
+        "ratedCapacity": "",
+        "powerType": "",
+        "material": "",
+        "certificateType": ""
+      },
+      "detailImagePath": "tbrender.png",
+      "summary": ""
+    },
+    "LiuYun": {
+      "displayName": "",
+      "type": "",
+      "specs": {
+        "overallLength": "",
+        "waterlineLength": "",
+        "beam": "",
+        "depth": "",
+        "draft": "",
+        "navigationArea": "",
+        "mainEnginePower": "",
+        "designSpeed": "",
+        "ratedCapacity": "",
+        "powerType": "",
+        "material": "",
+        "certificateType": ""
+      },
+      "detailImagePath": "tbrender.png",
+      "summary": ""
+    },
+    "PleasureBoat": {
+      "displayName": "",
+      "type": "",
+      "specs": {
+        "overallLength": "",
+        "waterlineLength": "",
+        "beam": "",
+        "depth": "",
+        "draft": "",
+        "navigationArea": "",
+        "mainEnginePower": "",
+        "designSpeed": "",
+        "ratedCapacity": "",
+        "powerType": "",
+        "material": "",
+        "certificateType": ""
+      },
+      "detailImagePath": "render-card.png",
+      "summary": ""
+    },
+    "PleasureBoat1": {
+      "displayName": "",
+      "type": "",
+      "specs": {
+        "overallLength": "",
+        "waterlineLength": "",
+        "beam": "",
+        "depth": "",
+        "draft": "",
+        "navigationArea": "",
+        "mainEnginePower": "",
+        "designSpeed": "",
+        "ratedCapacity": "",
+        "powerType": "",
+        "material": "",
+        "certificateType": ""
+      },
+      "detailImagePath": "1.png",
+      "summary": ""
+    },
+    "TestHigh": {
+      "displayName": "",
+      "type": "",
+      "specs": {
+        "overallLength": "",
+        "waterlineLength": "",
+        "beam": "",
+        "depth": "",
+        "draft": "",
+        "navigationArea": "",
+        "mainEnginePower": "",
+        "designSpeed": "",
+        "ratedCapacity": "",
+        "powerType": "",
+        "material": "",
+        "certificateType": ""
+      },
+      "detailImagePath": "tbrender.png",
+      "summary": ""
+    },
+    "TwoLayerBoat": {
+      "displayName": "",
+      "type": "",
+      "specs": {
+        "overallLength": "",
+        "waterlineLength": "",
+        "beam": "",
+        "depth": "",
+        "draft": "",
+        "navigationArea": "",
+        "mainEnginePower": "",
+        "designSpeed": "",
+        "ratedCapacity": "",
+        "powerType": "",
+        "material": "",
+        "certificateType": ""
+      },
+      "detailImagePath": "render-card.png",
+      "summary": ""
+    },
+    "Yacht": {
+      "displayName": "JS-950铝合金双体游艇",
+      "type": "游艇",
+      "specs": {
+        "overallLength": "9.98",
+        "waterlineLength": "8.756",
+        "beam": "3.50",
+        "depth": "1.00",
+        "draft": "0.52",
+        "navigationArea": "游艇IV类",
+        "mainEnginePower": "22KW*1",
+        "designSpeed": "10",
+        "ratedCapacity": "12",
+        "powerType": "电动舷外挂机",
+        "material": "铝合金",
+        "certificateType": "CCS"
+      },
+      "detailImagePath": "1.png",
+      "summary": ""
+    }
+  }
 }

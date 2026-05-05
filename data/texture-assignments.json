@@ -1,0 +1,106 @@
+{
+  "updatedAt": "2026-05-05T12:14:07Z",
+  "files": {
+    "40mijianchuan/cc/ccuv_01 - Default_BaseColor.png": {
+      "textureType": "baseColor",
+      "useAlphaAsOpacity": true
+    },
+    "40mijianchuan/cc/ccuv_01 - Default_R+M+AO.png": {
+      "textureType": "orm"
+    },
+    "40mijianchuan/qt/qtuv_02 - Default_R+M+AO.png": {
+      "textureType": "orm"
+    },
+    "40mijianchuan/tbrender.png": {
+      "useAlphaAsOpacity": true
+    },
+    "57sites/mt/mtUV_01 - Default_BaseColor.png": {
+      "useAlphaAsOpacity": true
+    },
+    "Cabnet/render-card.png": {
+      "textureType": "none"
+    },
+    "Cabnet/tt/119_01 - Default_BaseColor.png": {
+      "useAlphaAsOpacity": true
+    }
+  },
+  "uvSets": {
+    "40mijianchuan/cc": {
+      "materialNameHint": "M_01___Default",
+      "renderProfile": {
+        "alphaMode": "blend",
+        "side": "double",
+        "depthWrite": "on",
+        "depthTest": "on",
+        "alphaCutoff": 0.02,
+        "renderOrder": 20
+      }
+    },
+    "40mijianchuan/qt": {
+      "materialNameHint": "M_02___Default",
+      "renderProfile": {}
+    },
+    "57sites/cc": {
+      "materialNameHint": "02 - Default",
+      "renderProfile": {}
+    },
+    "57sites/mt": {
+      "materialNameHint": "01 - Default",
+      "renderProfile": {}
+    },
+    "Cabnet/tt": {
+      "materialNameHint": "M_01___Default",
+      "renderProfile": {
+        "alphaMode": "opaque",
+        "side": "double",
+        "depthWrite": "on"
+      }
+    },
+    "FireFighting/tt/cc": {
+      "materialNameHint": "M_01___Default",
+      "renderProfile": {
+        "alphaMode": "opaque",
+        "side": "double",
+        "depthWrite": "on"
+      }
+    },
+    "FireFighting/tt/diban": {
+      "materialNameHint": "M_03___Default",
+      "renderProfile": {}
+    },
+    "FireFighting/tt/langan": {
+      "materialNameHint": "M_02___Default",
+      "renderProfile": {
+        "alphaMode": "opaque",
+        "side": "double",
+        "depthWrite": "on"
+      }
+    },
+    "LiuYun/cc": {
+      "materialNameHint": "M_01___Default",
+      "renderProfile": {
+        "alphaMode": "opaque",
+        "side": "double",
+        "depthWrite": "on"
+      }
+    },
+    "LiuYun/mt": {
+      "materialNameHint": "M_02___Default",
+      "renderProfile": {
+        "alphaMode": "opaque",
+        "side": "double",
+        "depthWrite": "on"
+      }
+    },
+    "TestHigh/船舱+栏杆+沙发（2048）/tt": {
+      "materialNameHint": "M_01___Default",
+      "renderProfile": {
+        "alphaMode": "opaque",
+        "side": "double",
+        "depthWrite": "on",
+        "depthTest": "on",
+        "renderOrder": 5
+      }
+    }
+  }
+}

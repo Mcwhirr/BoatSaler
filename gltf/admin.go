@@ -16,26 +16,32 @@ import (
 const maxUploadRequestSize = 512 << 20
 
 type app struct {
-	repoRoot     string
-	sourceDir    string
-	frontendDir  string
-	publicDir    string
-	manifestPath string
+	repoRoot               string
+	sourceDir              string
+	frontendDir            string
+	publicDir              string
+	manifestPath           string
 	textureAssignmentsPath string
-	distDir      string
-	contentPath  string
-	mu           sync.Mutex
+	authPath               string
+	ordersPath             string
+	distDir                string
+	contentPath            string
+	mu                     sync.Mutex
+	sessionMu              sync.Mutex
+	sessions               map[string]adminSession
 }
 
 type projectPaths struct {
-	repoRoot     string
-	sourceDir    string
-	frontendDir  string
-	publicDir    string
-	manifestPath string
+	repoRoot               string
+	sourceDir              string
+	frontendDir            string
+	publicDir              string
+	manifestPath           string
 	textureAssignmentsPath string
-	distDir      string
-	contentPath  string
+	authPath               string
+	ordersPath             string
+	distDir                string
+	contentPath            string
 }
 
 type adminActionResponse struct {
@@ -49,16 +55,25 @@ func newApp() (*app, error) {
 		return nil, err
 	}
 
-	return &app{
-		repoRoot:     paths.repoRoot,
-		sourceDir:    paths.sourceDir,
-		frontendDir:  paths.frontendDir,
-		publicDir:    paths.publicDir,
-		manifestPath: paths.manifestPath,
+	application := &app{
+		repoRoot:               paths.repoRoot,
+		sourceDir:              paths.sourceDir,
+		frontendDir:            paths.frontendDir,
+		publicDir:              paths.publicDir,
+		manifestPath:           paths.manifestPath,
 		textureAssignmentsPath: paths.textureAssignmentsPath,
-		distDir:      paths.distDir,
-		contentPath:  paths.contentPath,
-	}, nil
+		authPath:               paths.authPath,
+		ordersPath:             paths.ordersPath,
+		distDir:                paths.distDir,
+		contentPath:            paths.contentPath,
+		sessions:               make(map[string]adminSession),
+	}
+
+	if err := application.ensureAdminAuthFile(); err != nil {
+		return nil, err
+	}
+
+	return application, nil
 }
 
 func discoverProjectPaths() (projectPaths, error) {
@@ -80,14 +95,16 @@ func discoverProjectPaths() (projectPaths, error) {
 			publicDir := filepath.Join(frontendDir, "public", "gltf")
 			manifestPath := filepath.Join(publicDir, "asset-manifest.json")
 			return projectPaths{
-				repoRoot:     repoRoot,
-				sourceDir:    sourceDir,
-				frontendDir:  frontendDir,
-				publicDir:    publicDir,
-				manifestPath: manifestPath,
+				repoRoot:               repoRoot,
+				sourceDir:              sourceDir,
+				frontendDir:            frontendDir,
+				publicDir:              publicDir,
+				manifestPath:           manifestPath,
 				textureAssignmentsPath: filepath.Join(repoRoot, "data", "texture-assignments.json"),
-				distDir:      filepath.Join(frontendDir, "dist"),
-				contentPath:  filepath.Join(repoRoot, "data", "site-content.json"),
+				authPath:               filepath.Join(repoRoot, "data", "admin-auth.json"),
+				ordersPath:             filepath.Join(repoRoot, "data", "orders.json"),
+				distDir:                filepath.Join(frontendDir, "dist"),
+				contentPath:            filepath.Join(repoRoot, "data", "site-content.json"),
 			}, nil
 		}
 
@@ -112,16 +129,23 @@ func isDirectory(path string) bool {
 }
 
 func (a *app) registerAdminRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/admin/models", a.handleAdminDashboard)
-	mux.HandleFunc("POST /api/admin/models/upload", a.handleAdminUpload)
-	mux.HandleFunc("DELETE /api/admin/models/{modelID}", a.handleAdminDeleteModel)
-	mux.HandleFunc("DELETE /api/admin/models/{modelID}/files", a.handleAdminDeleteFile)
-	mux.HandleFunc("PUT /api/admin/models/{modelID}/files/texture-type", a.handleAdminUpdateTextureType)
-	mux.HandleFunc("POST /api/admin/file-texture-type", a.handleAdminUpdateTextureType)
-	mux.HandleFunc("POST /api/admin/sync", a.handleAdminSync)
-	mux.HandleFunc("POST /api/admin/videos", a.handleAdminCreateVideo)
-	mux.HandleFunc("PUT /api/admin/videos/{videoID}", a.handleAdminUpdateVideo)
-	mux.HandleFunc("DELETE /api/admin/videos/{videoID}", a.handleAdminDeleteVideo)
+	mux.HandleFunc("GET /api/admin/auth/status", a.handleAdminAuthStatus)
+	mux.HandleFunc("POST /api/admin/auth/login", a.handleAdminLogin)
+	mux.HandleFunc("POST /api/admin/auth/logout", a.requireAdminSession(a.handleAdminLogout))
+	mux.HandleFunc("POST /api/admin/auth/change-password", a.requireAdminSession(a.handleAdminChangePassword))
+	mux.HandleFunc("GET /api/admin/models", a.requireAdminSession(a.handleAdminDashboard))
+	mux.HandleFunc("POST /api/admin/models/upload", a.requireAdminSession(a.handleAdminUpload))
+	mux.HandleFunc("PUT /api/admin/models/{modelID}/content", a.requireAdminSession(a.handleAdminUpdateModelContent))
+	mux.HandleFunc("PUT /api/admin/models/{modelID}/engines", a.requireAdminSession(a.handleAdminUpdateModelEngines))
+	mux.HandleFunc("DELETE /api/admin/models/{modelID}", a.requireAdminSession(a.handleAdminDeleteModel))
+	mux.HandleFunc("DELETE /api/admin/models/{modelID}/files", a.requireAdminSession(a.handleAdminDeleteFile))
+	mux.HandleFunc("PUT /api/admin/models/{modelID}/files/texture-type", a.requireAdminSession(a.handleAdminUpdateTextureType))
+	mux.HandleFunc("POST /api/admin/file-texture-type", a.requireAdminSession(a.handleAdminUpdateTextureType))
+	mux.HandleFunc("POST /api/admin/uv-set-material-hint", a.requireAdminSession(a.handleAdminUpdateUVSetMaterialHint))
+	mux.HandleFunc("POST /api/admin/sync", a.requireAdminSession(a.handleAdminSync))
+	mux.HandleFunc("POST /api/admin/videos", a.requireAdminSession(a.handleAdminCreateVideo))
+	mux.HandleFunc("PUT /api/admin/videos/{videoID}", a.requireAdminSession(a.handleAdminUpdateVideo))
+	mux.HandleFunc("DELETE /api/admin/videos/{videoID}", a.requireAdminSession(a.handleAdminDeleteVideo))
 }
 
 func (a *app) handleAdminDashboard(w http.ResponseWriter, r *http.Request) {
@@ -251,6 +275,20 @@ func (a *app) handleAdminDeleteModel(w http.ResponseWriter, r *http.Request) {
 	if err := os.RemoveAll(modelDir); err != nil {
 		writeAPIError(w, http.StatusInternalServerError, fmt.Errorf("delete model %s: %w", modelID, err))
 		return
+	}
+
+	content, err := a.readSiteContent()
+	if err != nil {
+		writeAPIError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if _, exists := content.Models[modelID]; exists {
+		delete(content.Models, modelID)
+		if err := a.writeSiteContent(content); err != nil {
+			writeAPIError(w, http.StatusInternalServerError, err)
+			return
+		}
 	}
 
 	if _, err := a.syncAssetsLocked(); err != nil {
@@ -386,11 +424,19 @@ func sanitizeModelID(value string) (string, error) {
 	}
 
 	for _, r := range candidate {
-		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' || r == '-' || r == '.' {
+		if r == '/' || r == '\\' || r == ':' || r == '*' || r == '?' || r == '"' || r == '<' || r == '>' || r == '|' {
+			return "", errors.New("modelId contains unsupported path characters")
+		}
+
+		if r < 0x20 {
+			return "", errors.New("modelId contains control characters")
+		}
+
+		if r == '_' || r == '-' || r == '.' || r == ' ' || r >= 0x80 || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
 			continue
 		}
 
-		return "", errors.New("modelId may only contain letters, numbers, dot, dash, and underscore")
+		return "", errors.New("modelId contains unsupported characters")
 	}
 
 	return candidate, nil
@@ -420,12 +466,30 @@ func sanitizeRelativeSubdirectory(value string) (string, error) {
 			continue
 		}
 
-		if _, err := sanitizeModelID(segment); err != nil {
-			return "", errors.New("subdir contains unsupported characters")
+		if err := validateRelativePathSegment(segment); err != nil {
+			return "", fmt.Errorf("subdir contains unsupported characters: %w", err)
 		}
 	}
 
 	return cleaned, nil
+}
+
+func validateRelativePathSegment(segment string) error {
+	if segment == "." || segment == ".." {
+		return errors.New("relative path segment may not be dot or dot-dot")
+	}
+
+	for _, r := range segment {
+		if r == '/' || r == '\\' || r == ':' || r == '*' || r == '?' || r == '"' || r == '<' || r == '>' || r == '|' {
+			return errors.New("relative path segment contains unsupported path characters")
+		}
+
+		if r < 0x20 {
+			return errors.New("relative path segment contains control characters")
+		}
+	}
+
+	return nil
 }
 
 func sanitizeRelativeFilePath(value string) (string, error) {

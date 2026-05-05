@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -20,8 +21,47 @@ var (
 )
 
 type siteContent struct {
-	UpdatedAt string      `json:"updatedAt"`
-	Videos    []siteVideo `json:"videos"`
+	UpdatedAt string                      `json:"updatedAt"`
+	Videos    []siteVideo                 `json:"videos"`
+	Models    map[string]siteModelContent `json:"models"`
+}
+
+type siteModelSpecs struct {
+	OverallLength   string `json:"overallLength"`
+	WaterlineLength string `json:"waterlineLength"`
+	Beam            string `json:"beam"`
+	Depth           string `json:"depth"`
+	Draft           string `json:"draft"`
+	NavigationArea  string `json:"navigationArea"`
+	MainEnginePower string `json:"mainEnginePower"`
+	DesignSpeed     string `json:"designSpeed"`
+	RatedCapacity   string `json:"ratedCapacity"`
+	PowerType       string `json:"powerType"`
+	Material        string `json:"material"`
+	CertificateType string `json:"certificateType"`
+}
+
+type siteVector3 struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+	Z float64 `json:"z"`
+}
+
+type siteEngineMount struct {
+	Enabled  bool        `json:"enabled"`
+	Type     string      `json:"type"`
+	Position siteVector3 `json:"position"`
+	Rotation siteVector3 `json:"rotation"`
+}
+
+type siteModelContent struct {
+	DisplayName     string            `json:"displayName"`
+	Type            string            `json:"type"`
+	Price           string            `json:"price"`
+	Specs           siteModelSpecs    `json:"specs"`
+	Engines         []siteEngineMount `json:"engines,omitempty"`
+	DetailImagePath string            `json:"detailImagePath"`
+	Summary         string            `json:"summary"`
 }
 
 type siteVideo struct {
@@ -40,6 +80,22 @@ type siteVideoInput struct {
 	URL     string `json:"url"`
 }
 
+type siteModelContentInput struct {
+	DisplayName     string            `json:"displayName"`
+	Type            string            `json:"type"`
+	Price           string            `json:"price"`
+	Specs           siteModelSpecs    `json:"specs"`
+	Engines         []siteEngineMount `json:"engines"`
+	DetailImagePath string            `json:"detailImagePath"`
+	Summary         string            `json:"summary"`
+}
+
+type siteModelEnginesInput struct {
+	Engines []siteEngineMount `json:"engines"`
+}
+
+const maxSiteEngineMountCount = 4
+
 func (a *app) registerContentRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/site-content", a.handleSiteContent)
 }
@@ -52,6 +108,149 @@ func (a *app) handleSiteContent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, content)
+}
+
+func (a *app) handleAdminUpdateModelContent(w http.ResponseWriter, r *http.Request) {
+	modelID, err := sanitizeModelID(r.PathValue("modelID"))
+	if err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	input, err := decodeSiteModelContentInput(r)
+	if err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	modelDir := filepath.Join(a.sourceDir, modelID)
+	if _, err := os.Stat(modelDir); err != nil {
+		if os.IsNotExist(err) {
+			writeAPIError(w, http.StatusNotFound, fmt.Errorf("model %s does not exist", modelID))
+			return
+		}
+
+		writeAPIError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	content, err := a.readSiteContent()
+	if err != nil {
+		writeAPIError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	nextContent := siteModelContent{
+		DisplayName: strings.TrimSpace(input.DisplayName),
+		Type:        normalizeModelType(input.Type),
+		Price:       "",
+		Specs:       normalizeSiteModelSpecs(input.Specs),
+		Engines:     normalizeSiteEngineMounts(input.Engines),
+		Summary:     strings.TrimSpace(input.Summary),
+	}
+
+	price, err := normalizeSiteModelPrice(input.Price)
+	if err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	nextContent.Price = price
+
+	detailImagePath, err := normalizeSiteModelDetailImagePath(a.sourceDir, modelID, input.DetailImagePath)
+	if err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+	nextContent.DetailImagePath = detailImagePath
+
+	if !hasAnySiteModelContent(nextContent) {
+		delete(content.Models, modelID)
+	} else {
+		content.Models[modelID] = nextContent
+	}
+
+	if err := a.writeSiteContent(content); err != nil {
+		writeAPIError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	dashboard, err := a.buildDashboard()
+	if err != nil {
+		writeAPIError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, adminActionResponse{
+		Message: fmt.Sprintf("Updated content for model %s", modelID),
+		State:   dashboard,
+	})
+}
+
+func (a *app) handleAdminUpdateModelEngines(w http.ResponseWriter, r *http.Request) {
+	modelID, err := sanitizeModelID(r.PathValue("modelID"))
+	if err != nil {
+		writeAPIError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	var input siteModelEnginesInput
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&input); err != nil {
+		writeAPIError(w, http.StatusBadRequest, fmt.Errorf("decode request body: %w", err))
+		return
+	}
+
+	modelDir := filepath.Join(a.sourceDir, modelID)
+	if _, err := os.Stat(modelDir); err != nil {
+		if os.IsNotExist(err) {
+			writeAPIError(w, http.StatusNotFound, fmt.Errorf("model %s does not exist", modelID))
+			return
+		}
+
+		writeAPIError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if err := a.updateSiteModelEngines(modelID, input.Engines); err != nil {
+		writeAPIError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	dashboard, err := a.buildDashboard()
+	if err != nil {
+		writeAPIError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, adminActionResponse{
+		Message: fmt.Sprintf("Updated engine mounts for model %s", modelID),
+		State:   dashboard,
+	})
+}
+
+func (a *app) updateSiteModelEngines(modelID string, engines []siteEngineMount) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	content, err := a.readSiteContent()
+	if err != nil {
+		return err
+	}
+
+	nextContent := content.Models[modelID]
+	nextContent.Engines = normalizeSiteEngineMounts(engines)
+
+	if !hasAnySiteModelContent(nextContent) {
+		delete(content.Models, modelID)
+	} else {
+		content.Models[modelID] = nextContent
+	}
+
+	return a.writeSiteContent(content)
 }
 
 func (a *app) handleAdminCreateVideo(w http.ResponseWriter, r *http.Request) {
@@ -206,6 +405,10 @@ func (a *app) readSiteContent() (siteContent, error) {
 		content.Videos = []siteVideo{}
 	}
 
+	if content.Models == nil {
+		content.Models = map[string]siteModelContent{}
+	}
+
 	return content, nil
 }
 
@@ -213,6 +416,10 @@ func (a *app) writeSiteContent(content siteContent) error {
 	content.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 	if content.Videos == nil {
 		content.Videos = []siteVideo{}
+	}
+
+	if content.Models == nil {
+		content.Models = map[string]siteModelContent{}
 	}
 
 	if err := os.MkdirAll(filepath.Dir(a.contentPath), 0o755); err != nil {
@@ -235,6 +442,7 @@ func defaultSiteContent() siteContent {
 	return siteContent{
 		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
 		Videos:    []siteVideo{},
+		Models:    map[string]siteModelContent{},
 	}
 }
 
@@ -247,6 +455,228 @@ func decodeSiteVideoInput(r *http.Request) (siteVideoInput, error) {
 	}
 
 	return input, nil
+}
+
+func decodeSiteModelContentInput(r *http.Request) (siteModelContentInput, error) {
+	var payload map[string]json.RawMessage
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&payload); err != nil {
+		return siteModelContentInput{}, fmt.Errorf("decode request body: %w", err)
+	}
+
+	allowedFields := map[string]struct{}{
+		"displayName":     {},
+		"type":            {},
+		"price":           {},
+		"specs":           {},
+		"engines":         {},
+		"detailImagePath": {},
+		"summary":         {},
+	}
+
+	for field := range payload {
+		if _, ok := allowedFields[field]; !ok {
+			return siteModelContentInput{}, fmt.Errorf("decode request body: json: unknown field %q", field)
+		}
+	}
+
+	var input siteModelContentInput
+	if err := decodeSiteModelContentField(payload, "displayName", &input.DisplayName); err != nil {
+		return siteModelContentInput{}, err
+	}
+	if err := decodeSiteModelContentField(payload, "type", &input.Type); err != nil {
+		return siteModelContentInput{}, err
+	}
+	if err := decodeSiteModelContentField(payload, "price", &input.Price); err != nil {
+		return siteModelContentInput{}, err
+	}
+	if err := decodeSiteModelContentField(payload, "specs", &input.Specs); err != nil {
+		return siteModelContentInput{}, err
+	}
+	if err := decodeSiteModelContentField(payload, "engines", &input.Engines); err != nil {
+		return siteModelContentInput{}, err
+	}
+	if err := decodeSiteModelContentField(payload, "detailImagePath", &input.DetailImagePath); err != nil {
+		return siteModelContentInput{}, err
+	}
+	if err := decodeSiteModelContentField(payload, "summary", &input.Summary); err != nil {
+		return siteModelContentInput{}, err
+	}
+
+	if strings.TrimSpace(input.Type) != "" && normalizeModelType(input.Type) == "" {
+		return siteModelContentInput{}, errors.New("type must be one of 新能源船、应急救援船、公务执法艇、游艇")
+	}
+
+	return input, nil
+}
+
+func decodeSiteModelContentField(payload map[string]json.RawMessage, field string, destination any) error {
+	rawValue, ok := payload[field]
+	if !ok {
+		return nil
+	}
+
+	if err := json.Unmarshal(rawValue, destination); err != nil {
+		return fmt.Errorf("decode request body: field %q: %w", field, err)
+	}
+
+	return nil
+}
+
+func normalizeSiteModelSpecs(specs siteModelSpecs) siteModelSpecs {
+	return siteModelSpecs{
+		OverallLength:   strings.TrimSpace(specs.OverallLength),
+		WaterlineLength: strings.TrimSpace(specs.WaterlineLength),
+		Beam:            strings.TrimSpace(specs.Beam),
+		Depth:           strings.TrimSpace(specs.Depth),
+		Draft:           strings.TrimSpace(specs.Draft),
+		NavigationArea:  strings.TrimSpace(specs.NavigationArea),
+		MainEnginePower: strings.TrimSpace(specs.MainEnginePower),
+		DesignSpeed:     strings.TrimSpace(specs.DesignSpeed),
+		RatedCapacity:   strings.TrimSpace(specs.RatedCapacity),
+		PowerType:       strings.TrimSpace(specs.PowerType),
+		Material:        strings.TrimSpace(specs.Material),
+		CertificateType: strings.TrimSpace(specs.CertificateType),
+	}
+}
+
+func normalizeSiteEngineType(value string) string {
+	switch strings.TrimSpace(value) {
+	case "", "outboard-a":
+		return "outboard-a"
+	case "outboard-b":
+		return "outboard-b"
+	default:
+		return ""
+	}
+}
+
+func normalizeSiteVector3(value siteVector3) siteVector3 {
+	return siteVector3{
+		X: value.X,
+		Y: value.Y,
+		Z: value.Z,
+	}
+}
+
+func normalizeSiteEngineMounts(engines []siteEngineMount) []siteEngineMount {
+	if len(engines) == 0 {
+		return nil
+	}
+
+	limit := len(engines)
+	if limit > maxSiteEngineMountCount {
+		limit = maxSiteEngineMountCount
+	}
+
+	normalized := make([]siteEngineMount, 0, limit)
+	for index, engine := range engines {
+		if index >= maxSiteEngineMountCount {
+			break
+		}
+
+		normalized = append(normalized, siteEngineMount{
+			Enabled:  engine.Enabled,
+			Type:     normalizeSiteEngineType(engine.Type),
+			Position: normalizeSiteVector3(engine.Position),
+			Rotation: normalizeSiteVector3(engine.Rotation),
+		})
+	}
+
+	return normalized
+}
+
+func normalizeSiteModelPrice(value string) (string, error) {
+	candidate := strings.TrimSpace(value)
+	if candidate == "" {
+		return "", nil
+	}
+
+	candidate = strings.NewReplacer("￥", "", "¥", "", "，", "", ",", "", " ", "").Replace(candidate)
+	amount, err := strconv.ParseFloat(candidate, 64)
+	if err != nil {
+		return "", errors.New("price must be a valid number")
+	}
+
+	return strconv.FormatFloat(amount, 'f', -1, 64), nil
+}
+
+func hasAnySiteModelSpecs(specs siteModelSpecs) bool {
+	return specs.OverallLength != "" ||
+		specs.WaterlineLength != "" ||
+		specs.Beam != "" ||
+		specs.Depth != "" ||
+		specs.Draft != "" ||
+		specs.NavigationArea != "" ||
+		specs.MainEnginePower != "" ||
+		specs.DesignSpeed != "" ||
+		specs.RatedCapacity != "" ||
+		specs.PowerType != "" ||
+		specs.Material != "" ||
+		specs.CertificateType != ""
+}
+
+func hasAnySiteModelContent(content siteModelContent) bool {
+	return content.DisplayName != "" ||
+		content.Type != "" ||
+		content.Price != "" ||
+		content.DetailImagePath != "" ||
+		content.Summary != "" ||
+		len(content.Engines) > 0 ||
+		hasAnySiteModelSpecs(content.Specs)
+}
+
+func normalizeSiteModelDetailImagePath(sourceDir string, modelID string, value string) (string, error) {
+	candidate := strings.TrimSpace(value)
+	if candidate == "" {
+		return "", nil
+	}
+
+	relativePath, err := sanitizeRelativeFilePath(candidate)
+	if err != nil {
+		return "", errors.New("detailImagePath must be a relative file path inside the model directory")
+	}
+
+	extension := strings.ToLower(filepath.Ext(relativePath))
+	if !isPreviewImageExtension(extension) {
+		return "", errors.New("detailImagePath must point to a png, jpg, jpeg, or webp image")
+	}
+
+	modelDir := filepath.Join(sourceDir, modelID)
+	absolutePath := filepath.Join(modelDir, filepath.FromSlash(relativePath))
+	if !isWithinBaseDirectory(modelDir, absolutePath) {
+		return "", errors.New("detailImagePath may not escape the model directory")
+	}
+
+	info, err := os.Stat(absolutePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("detail image does not exist: %s", relativePath)
+		}
+
+		return "", fmt.Errorf("read detail image: %w", err)
+	}
+
+	if info.IsDir() {
+		return "", errors.New("detailImagePath must point to a file")
+	}
+
+	return relativePath, nil
+}
+
+func normalizeModelType(value string) string {
+	switch strings.TrimSpace(value) {
+	case "新能源船":
+		return "新能源船"
+	case "应急救援船":
+		return "应急救援船"
+	case "公务执法艇":
+		return "公务执法艇"
+	case "游艇":
+		return "游艇"
+	default:
+		return ""
+	}
 }
 
 func buildSiteVideo(existingID string, input siteVideoInput) (siteVideo, error) {
