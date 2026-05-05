@@ -1,0 +1,1324 @@
+{
+  "version": 1,
+  "generatedAt": "2026-05-05T17:46:13.437Z",
+  "source": {
+    "assetRoot": "../gltf",
+    "publicRoot": "public/gltf"
+  },
+  "primaryModelId": "PleasureBoat1",
+  "models": [
+    {
+      "id": "40mijianchuan",
+      "label": "40mijianchuan",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/40mijianchuan/40.fbx"
+      },
+      "defaultUvSetId": "cc",
+      "uvSets": [
+        {
+          "id": "cc",
+          "label": "UV cc",
+          "directory": "/gltf/40mijianchuan/cc",
+          "materialNameHint": "01 - Default",
+          "materialHintSource": "manual-runtime",
+          "textures": {
+            "baseColor": "/gltf/40mijianchuan/cc/ccuv_01 - Default_BaseColor.png",
+            "normal": "/gltf/40mijianchuan/cc/ccuv_01 - Default_Normal.png",
+            "orm": "/gltf/40mijianchuan/cc/ccuv_01 - Default_R+M+AO.png"
+          },
+          "textureOptions": {
+            "baseColor": {
+              "useAlphaAsOpacity": true
+            }
+          },
+          "renderProfile": {
+            "alphaMode": "blend",
+            "side": "double",
+            "depthWrite": "on",
+            "depthTest": "on",
+            "alphaCutoff": 0.02,
+            "renderOrder": 20
+          }
+        },
+        {
+          "id": "qt",
+          "label": "UV qt",
+          "directory": "/gltf/40mijianchuan/qt",
+          "materialNameHint": "02 - Default",
+          "materialHintSource": "manual-runtime",
+          "textures": {
+            "baseColor": "/gltf/40mijianchuan/qt/qtuv_02 - Default_BaseColor.png",
+            "normal": "/gltf/40mijianchuan/qt/qtuv_02 - Default_Normal.png",
+            "orm": "/gltf/40mijianchuan/qt/qtuv_02 - Default_R+M+AO.png"
+          }
+        }
+      ],
+      "runtime": {
+        "materialSlots": [
+          {
+            "name": "01 - Default",
+            "normalizedName": "01default",
+            "meshCount": 1
+          },
+          {
+            "name": "02 - Default",
+            "normalizedName": "02default",
+            "meshCount": 2173
+          }
+        ],
+        "meshCount": 2174,
+        "meshWithUvCount": 2174,
+        "meshWithUv2Count": 0,
+        "uvCoverage": 1,
+        "uv2Coverage": 0,
+        "inspectionError": "",
+        "candidates": [
+          {
+            "fileName": "40.fbx",
+            "format": "fbx",
+            "path": "/gltf/40mijianchuan/40.fbx",
+            "score": 1206,
+            "materialSlots": [
+              {
+                "name": "01 - Default",
+                "normalizedName": "01default",
+                "meshCount": 1
+              },
+              {
+                "name": "02 - Default",
+                "normalizedName": "02default",
+                "meshCount": 2173
+              }
+            ],
+            "meshCount": 2174,
+            "meshWithUvCount": 2174,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          },
+          {
+            "fileName": "40.glb",
+            "format": "glb",
+            "path": "/gltf/40mijianchuan/40.glb",
+            "score": 205,
+            "materialSlots": [
+              {
+                "name": "M_01___Default",
+                "normalizedName": "01default",
+                "meshCount": 1
+              },
+              {
+                "name": "M_02___Default",
+                "normalizedName": "02default",
+                "meshCount": 2173
+              }
+            ],
+            "meshCount": 2174,
+            "meshWithUvCount": 0,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 0,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "57sites",
+      "label": "57sites",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/57sites/57.fbx"
+      },
+      "defaultUvSetId": "cc",
+      "uvSets": [
+        {
+          "id": "cc",
+          "label": "UV cc",
+          "directory": "/gltf/57sites/cc",
+          "materialNameHint": "02 - Default",
+          "materialHintSource": "manual",
+          "textures": {
+            "baseColor": "/gltf/57sites/cc/ccUV_01 - Default_BaseColor.png",
+            "normal": "/gltf/57sites/cc/ccUV_01 - Default_Normal.png",
+            "orm": "/gltf/57sites/cc/ccUV_01 - Default_R+M+AO.png"
+          }
+        },
+        {
+          "id": "mt",
+          "label": "UV mt",
+          "directory": "/gltf/57sites/mt",
+          "materialNameHint": "01 - Default",
+          "materialHintSource": "manual",
+          "textures": {
+            "baseColor": "/gltf/57sites/mt/mtUV_01 - Default_BaseColor.png",
+            "normal": "/gltf/57sites/mt/mtUV_01 - Default_Normal.png",
+            "orm": "/gltf/57sites/mt/mtUV_01 - Default_R+M+AO.png"
+          },
+          "textureOptions": {
+            "baseColor": {
+              "useAlphaAsOpacity": true
+            }
+          }
+        }
+      ],
+      "runtime": {
+        "materialSlots": [
+          {
+            "name": "01 - Default",
+            "normalizedName": "01default",
+            "meshCount": 1
+          },
+          {
+            "name": "02 - Default",
+            "normalizedName": "02default",
+            "meshCount": 1
+          }
+        ],
+        "meshCount": 2,
+        "meshWithUvCount": 2,
+        "meshWithUv2Count": 0,
+        "uvCoverage": 1,
+        "uv2Coverage": 0,
+        "inspectionError": "",
+        "candidates": [
+          {
+            "fileName": "57.fbx",
+            "format": "fbx",
+            "path": "/gltf/57sites/57.fbx",
+            "score": 1200,
+            "materialSlots": [
+              {
+                "name": "01 - Default",
+                "normalizedName": "01default",
+                "meshCount": 1
+              },
+              {
+                "name": "02 - Default",
+                "normalizedName": "02default",
+                "meshCount": 1
+              }
+            ],
+            "meshCount": 2,
+            "meshWithUvCount": 2,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          },
+          {
+            "fileName": "57.glb",
+            "format": "glb",
+            "path": "/gltf/57sites/57.glb",
+            "score": 200,
+            "materialSlots": [
+              {
+                "name": "M_01___Default",
+                "normalizedName": "01default",
+                "meshCount": 1
+              },
+              {
+                "name": "M_02___Default",
+                "normalizedName": "02default",
+                "meshCount": 1
+              }
+            ],
+            "meshCount": 2,
+            "meshWithUvCount": 0,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 0,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "Cabnet",
+      "label": "Cabnet",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/Cabnet/119B.fbx"
+      },
+      "defaultUvSetId": "tt",
+      "uvSets": [
+        {
+          "id": "tt",
+          "label": "UV tt",
+          "directory": "/gltf/Cabnet/tt",
+          "materialNameHint": "01 - Default",
+          "materialHintSource": "manual-runtime",
+          "textures": {
+            "baseColor": "/gltf/Cabnet/tt/119_01 - Default_BaseColor.png",
+            "emissive": "/gltf/Cabnet/tt/119_01 - Default_Emissive.png",
+            "metalness": "/gltf/Cabnet/tt/119_01 - Default_Metallic.png",
+            "normal": "/gltf/Cabnet/tt/119_01 - Default_Normal.png",
+            "roughness": "/gltf/Cabnet/tt/119_01 - Default_Roughness.png",
+            "ao": "/gltf/Cabnet/tt/ao.png"
+          },
+          "textureOptions": {
+            "baseColor": {
+              "useAlphaAsOpacity": true
+            }
+          },
+          "renderProfile": {
+            "alphaMode": "opaque",
+            "side": "double",
+            "depthWrite": "on"
+          }
+        }
+      ],
+      "runtime": {
+        "materialSlots": [
+          {
+            "name": "01 - Default",
+            "normalizedName": "01default",
+            "meshCount": 2
+          }
+        ],
+        "meshCount": 2,
+        "meshWithUvCount": 2,
+        "meshWithUv2Count": 0,
+        "uvCoverage": 1,
+        "uv2Coverage": 0,
+        "inspectionError": "",
+        "candidates": [
+          {
+            "fileName": "119B.fbx",
+            "format": "fbx",
+            "path": "/gltf/Cabnet/119B.fbx",
+            "score": 1106,
+            "materialSlots": [
+              {
+                "name": "01 - Default",
+                "normalizedName": "01default",
+                "meshCount": 2
+              }
+            ],
+            "meshCount": 2,
+            "meshWithUvCount": 2,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          },
+          {
+            "fileName": "119B.glb",
+            "format": "glb",
+            "path": "/gltf/Cabnet/119B.glb",
+            "score": 105,
+            "materialSlots": [
+              {
+                "name": "M_01___Default",
+                "normalizedName": "01default",
+                "meshCount": 2
+              }
+            ],
+            "meshCount": 2,
+            "meshWithUvCount": 0,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 0,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "FireFighting",
+      "label": "FireFighting",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/FireFighting/13.fbx"
+      },
+      "defaultUvSetId": "tt/cc",
+      "uvSets": [
+        {
+          "id": "tt/cc",
+          "label": "UV tt/cc",
+          "directory": "/gltf/FireFighting/tt/cc",
+          "materialNameHint": "01 - Default",
+          "materialHintSource": "manual-runtime",
+          "textures": {
+            "ao": "/gltf/FireFighting/tt/cc/ao.png",
+            "baseColor": "/gltf/FireFighting/tt/cc/cc_01 - Default_BaseColor.png",
+            "metalness": "/gltf/FireFighting/tt/cc/cc_01 - Default_Metallic.png",
+            "normal": "/gltf/FireFighting/tt/cc/cc_01 - Default_Normal.png",
+            "roughness": "/gltf/FireFighting/tt/cc/cc_01 - Default_Roughness.png"
+          },
+          "renderProfile": {
+            "alphaMode": "opaque",
+            "side": "double",
+            "depthWrite": "on"
+          }
+        },
+        {
+          "id": "tt/diban",
+          "label": "UV tt/diban",
+          "directory": "/gltf/FireFighting/tt/diban",
+          "materialNameHint": "03 - Default",
+          "materialHintSource": "manual-runtime",
+          "textures": {
+            "ao": "/gltf/FireFighting/tt/diban/ao.png",
+            "baseColor": "/gltf/FireFighting/tt/diban/diban_03 - Default_BaseColor.png",
+            "metalness": "/gltf/FireFighting/tt/diban/diban_03 - Default_Metallic.png",
+            "normal": "/gltf/FireFighting/tt/diban/diban_03 - Default_Normal.png",
+            "roughness": "/gltf/FireFighting/tt/diban/diban_03 - Default_Roughness.png"
+          }
+        },
+        {
+          "id": "tt/langan",
+          "label": "UV tt/langan",
+          "directory": "/gltf/FireFighting/tt/langan",
+          "materialNameHint": "02 - Default",
+          "materialHintSource": "manual-runtime",
+          "textures": {
+            "baseColor": "/gltf/FireFighting/tt/langan/alngan_02 - Default_BaseColor.png",
+            "emissive": "/gltf/FireFighting/tt/langan/alngan_02 - Default_Emissive.png",
+            "metalness": "/gltf/FireFighting/tt/langan/alngan_02 - Default_Metallic.png",
+            "normal": "/gltf/FireFighting/tt/langan/alngan_02 - Default_Normal.png",
+            "roughness": "/gltf/FireFighting/tt/langan/alngan_02 - Default_Roughness.png",
+            "ao": "/gltf/FireFighting/tt/langan/ao.png"
+          },
+          "renderProfile": {
+            "alphaMode": "opaque",
+            "side": "double",
+            "depthWrite": "on"
+          }
+        }
+      ],
+      "runtime": {
+        "materialSlots": [
+          {
+            "name": "01 - Default",
+            "normalizedName": "01default",
+            "meshCount": 1
+          },
+          {
+            "name": "02 - Default",
+            "normalizedName": "02default",
+            "meshCount": 1
+          },
+          {
+            "name": "03 - Default",
+            "normalizedName": "03default",
+            "meshCount": 1
+          }
+        ],
+        "meshCount": 3,
+        "meshWithUvCount": 3,
+        "meshWithUv2Count": 0,
+        "uvCoverage": 1,
+        "uv2Coverage": 0,
+        "inspectionError": "",
+        "candidates": [
+          {
+            "fileName": "13.fbx",
+            "format": "fbx",
+            "path": "/gltf/FireFighting/13.fbx",
+            "score": 1306,
+            "materialSlots": [
+              {
+                "name": "01 - Default",
+                "normalizedName": "01default",
+                "meshCount": 1
+              },
+              {
+                "name": "02 - Default",
+                "normalizedName": "02default",
+                "meshCount": 1
+              },
+              {
+                "name": "03 - Default",
+                "normalizedName": "03default",
+                "meshCount": 1
+              }
+            ],
+            "meshCount": 3,
+            "meshWithUvCount": 3,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          },
+          {
+            "fileName": "13.glb",
+            "format": "glb",
+            "path": "/gltf/FireFighting/13.glb",
+            "score": 305,
+            "materialSlots": [
+              {
+                "name": "M_01___Default",
+                "normalizedName": "01default",
+                "meshCount": 1
+              },
+              {
+                "name": "M_02___Default",
+                "normalizedName": "02default",
+                "meshCount": 1
+              },
+              {
+                "name": "M_03___Default",
+                "normalizedName": "03default",
+                "meshCount": 1
+              }
+            ],
+            "meshCount": 3,
+            "meshWithUvCount": 0,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 0,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "LiuYun",
+      "label": "LiuYun",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/LiuYun/1198.fbx"
+      },
+      "defaultUvSetId": "cc",
+      "uvSets": [
+        {
+          "id": "cc",
+          "label": "UV cc",
+          "directory": "/gltf/LiuYun/cc",
+          "materialNameHint": "01 - Default",
+          "materialHintSource": "manual-runtime",
+          "textures": {
+            "baseColor": "/gltf/LiuYun/cc/CCuv_01 - Default_BaseColor.optimized.webp",
+            "metalness": "/gltf/LiuYun/cc/CCuv_01 - Default_Metallic.png",
+            "normal": "/gltf/LiuYun/cc/CCuv_01 - Default_Normal.optimized.webp",
+            "roughness": "/gltf/LiuYun/cc/CCuv_01 - Default_Roughness.png",
+            "ao": "/gltf/LiuYun/cc/ao.optimized.webp"
+          },
+          "renderProfile": {
+            "alphaMode": "opaque",
+            "side": "double",
+            "depthWrite": "on"
+          }
+        },
+        {
+          "id": "mt",
+          "label": "UV mt",
+          "directory": "/gltf/LiuYun/mt",
+          "materialNameHint": "02 - Default",
+          "materialHintSource": "manual-runtime",
+          "textures": {
+            "baseColor": "/gltf/LiuYun/mt/MUTOUuv_01 - Default_BaseColor.optimized.webp",
+            "metalness": "/gltf/LiuYun/mt/MUTOUuv_01 - Default_Metallic.png",
+            "normal": "/gltf/LiuYun/mt/MUTOUuv_01 - Default_Normal.optimized.webp",
+            "roughness": "/gltf/LiuYun/mt/MUTOUuv_01 - Default_Roughness.optimized.webp",
+            "ao": "/gltf/LiuYun/mt/ao.optimized.webp"
+          },
+          "renderProfile": {
+            "alphaMode": "opaque",
+            "side": "double",
+            "depthWrite": "on"
+          }
+        }
+      ],
+      "runtime": {
+        "materialSlots": [
+          {
+            "name": "01 - Default",
+            "normalizedName": "01default",
+            "meshCount": 7
+          },
+          {
+            "name": "02 - Default",
+            "normalizedName": "02default",
+            "meshCount": 3
+          }
+        ],
+        "meshCount": 10,
+        "meshWithUvCount": 10,
+        "meshWithUv2Count": 0,
+        "uvCoverage": 1,
+        "uv2Coverage": 0,
+        "inspectionError": "",
+        "candidates": [
+          {
+            "fileName": "1198.fbx",
+            "format": "fbx",
+            "path": "/gltf/LiuYun/1198.fbx",
+            "score": 1206,
+            "materialSlots": [
+              {
+                "name": "01 - Default",
+                "normalizedName": "01default",
+                "meshCount": 7
+              },
+              {
+                "name": "02 - Default",
+                "normalizedName": "02default",
+                "meshCount": 3
+              }
+            ],
+            "meshCount": 10,
+            "meshWithUvCount": 10,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          },
+          {
+            "fileName": "cc.fbx",
+            "format": "fbx",
+            "path": "/gltf/LiuYun/cc.fbx",
+            "score": 1100,
+            "materialSlots": [
+              {
+                "name": "01 - Default",
+                "normalizedName": "01default",
+                "meshCount": 7
+              }
+            ],
+            "meshCount": 7,
+            "meshWithUvCount": 7,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          },
+          {
+            "fileName": "mt.fbx",
+            "format": "fbx",
+            "path": "/gltf/LiuYun/mt.fbx",
+            "score": 1100,
+            "materialSlots": [
+              {
+                "name": "02 - Default",
+                "normalizedName": "02default",
+                "meshCount": 3
+              }
+            ],
+            "meshCount": 3,
+            "meshWithUvCount": 3,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          },
+          {
+            "fileName": "1198.glb",
+            "format": "glb",
+            "path": "/gltf/LiuYun/1198.glb",
+            "score": 205,
+            "materialSlots": [
+              {
+                "name": "M_01___Default",
+                "normalizedName": "01default",
+                "meshCount": 7
+              },
+              {
+                "name": "M_02___Default",
+                "normalizedName": "02default",
+                "meshCount": 3
+              }
+            ],
+            "meshCount": 10,
+            "meshWithUvCount": 0,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 0,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "PleasureBoat",
+      "label": "PleasureBoat",
+      "model": {
+        "format": "glb",
+        "path": "/gltf/PleasureBoat/PleasureBoat.glb"
+      },
+      "defaultUvSetId": "tietu",
+      "uvSets": [
+        {
+          "id": "tietu",
+          "label": "UV tietu",
+          "directory": "/gltf/PleasureBoat/tietu",
+          "materialNameHint": "M_01___Default",
+          "materialHintSource": "inferred",
+          "textures": {
+            "baseColor": "/gltf/PleasureBoat/tietu/316-2_01 - Default_BaseColor.png",
+            "emissive": "/gltf/PleasureBoat/tietu/316-2_01 - Default_Emissive.png",
+            "normal": "/gltf/PleasureBoat/tietu/316-2_01 - Default_Normal.png",
+            "ao": "/gltf/PleasureBoat/tietu/ao.png",
+            "metalness": "/gltf/PleasureBoat/tietu/metallic.png"
+          }
+        }
+      ],
+      "runtime": {
+        "materialSlots": [
+          {
+            "name": "M_01___Default",
+            "normalizedName": "01default",
+            "meshCount": 16
+          }
+        ],
+        "meshCount": 16,
+        "meshWithUvCount": 16,
+        "meshWithUv2Count": 0,
+        "uvCoverage": 1,
+        "uv2Coverage": 0,
+        "inspectionError": "",
+        "candidates": [
+          {
+            "fileName": "PleasureBoat.glb",
+            "format": "glb",
+            "path": "/gltf/PleasureBoat/PleasureBoat.glb",
+            "score": 1100,
+            "materialSlots": [
+              {
+                "name": "M_01___Default",
+                "normalizedName": "01default",
+                "meshCount": 16
+              }
+            ],
+            "meshCount": 16,
+            "meshWithUvCount": 16,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "PleasureBoat1",
+      "label": "PleasureBoat1",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/PleasureBoat1/11.fbx"
+      },
+      "defaultUvSetId": "tt",
+      "uvSets": [
+        {
+          "id": "tt",
+          "label": "UV tt",
+          "directory": "/gltf/PleasureBoat1/tt",
+          "materialNameHint": "01 - Default",
+          "materialHintSource": "runtime",
+          "textures": {
+            "baseColor": "/gltf/PleasureBoat1/tt/11_01 - Default_BaseColor.png",
+            "emissive": "/gltf/PleasureBoat1/tt/11_01 - Default_Emissive.png",
+            "metalness": "/gltf/PleasureBoat1/tt/11_01 - Default_Metallic.png",
+            "normal": "/gltf/PleasureBoat1/tt/11_01 - Default_Normal.png",
+            "roughness": "/gltf/PleasureBoat1/tt/11_01 - Default_Roughness.png",
+            "ao": "/gltf/PleasureBoat1/tt/ao.png"
+          }
+        }
+      ],
+      "runtime": {
+        "materialSlots": [
+          {
+            "name": "01 - Default",
+            "normalizedName": "01default",
+            "meshCount": 5
+          }
+        ],
+        "meshCount": 5,
+        "meshWithUvCount": 5,
+        "meshWithUv2Count": 0,
+        "uvCoverage": 1,
+        "uv2Coverage": 0,
+        "inspectionError": "",
+        "candidates": [
+          {
+            "fileName": "11.fbx",
+            "format": "fbx",
+            "path": "/gltf/PleasureBoat1/11.fbx",
+            "score": 1106,
+            "materialSlots": [
+              {
+                "name": "01 - Default",
+                "normalizedName": "01default",
+                "meshCount": 5
+              }
+            ],
+            "meshCount": 5,
+            "meshWithUvCount": 5,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          },
+          {
+            "fileName": "11.glb",
+            "format": "glb",
+            "path": "/gltf/PleasureBoat1/11.glb",
+            "score": 105,
+            "materialSlots": [
+              {
+                "name": "M_01___Default",
+                "normalizedName": "01default",
+                "meshCount": 5
+              }
+            ],
+            "meshCount": 5,
+            "meshWithUvCount": 0,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 0,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "TestHigh",
+      "label": "TestHigh",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/TestHigh/灯带+控制台（1024）/灯带+控制台（完整）.fbx"
+      },
+      "defaultUvSetId": null,
+      "uvSets": [],
+      "parts": [
+        {
+          "id": "灯带+控制台（1024）",
+          "label": "灯带+控制台（1024）",
+          "model": {
+            "format": "fbx",
+            "path": "/gltf/TestHigh/灯带+控制台（1024）/灯带+控制台（完整）.fbx"
+          },
+          "defaultUvSetId": "TT",
+          "uvSets": [
+            {
+              "id": "TT",
+              "label": "UV TT",
+              "directory": "/gltf/TestHigh/灯带+控制台（1024）/TT",
+              "materialNameHint": "22 - Default",
+              "materialHintSource": "runtime-single",
+              "textures": {
+                "ao": "/gltf/TestHigh/灯带+控制台（1024）/TT/AO.png",
+                "baseColor": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_BaseColor.png",
+                "emissive": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_Emissive.png",
+                "metalness": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_Metallic.png",
+                "normal": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_Normal.png",
+                "roughness": "/gltf/TestHigh/灯带+控制台（1024）/TT/灯带+控制台（UV）_01 - Default_Roughness.png"
+              }
+            }
+          ],
+          "runtime": {
+            "materialSlots": [
+              {
+                "name": "22 - Default",
+                "normalizedName": "22default",
+                "meshCount": 1
+              }
+            ],
+            "meshCount": 1,
+            "meshWithUvCount": 1,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": "",
+            "candidates": [
+              {
+                "fileName": "灯带+控制台（完整）.fbx",
+                "format": "fbx",
+                "path": "/gltf/TestHigh/灯带+控制台（完整）.fbx",
+                "score": 1009,
+                "materialSlots": [
+                  {
+                    "name": "22 - Default",
+                    "normalizedName": "22default",
+                    "meshCount": 1
+                  }
+                ],
+                "meshCount": 1,
+                "meshWithUvCount": 1,
+                "meshWithUv2Count": 0,
+                "uvCoverage": 1,
+                "uv2Coverage": 0,
+                "inspectionError": ""
+              },
+              {
+                "fileName": "灯带+控制台.glb",
+                "format": "glb",
+                "path": "/gltf/TestHigh/灯带+控制台.glb",
+                "score": 8,
+                "materialSlots": [
+                  {
+                    "name": "M_22___Default",
+                    "normalizedName": "22default",
+                    "meshCount": 1
+                  }
+                ],
+                "meshCount": 1,
+                "meshWithUvCount": 0,
+                "meshWithUv2Count": 0,
+                "uvCoverage": 0,
+                "uv2Coverage": 0,
+                "inspectionError": ""
+              }
+            ]
+          }
+        },
+        {
+          "id": "船体+顶棚（2048）",
+          "label": "船体+顶棚（2048）",
+          "model": {
+            "format": "fbx",
+            "path": "/gltf/TestHigh/船体+顶棚（2048）/船体+顶棚(整体).fbx"
+          },
+          "defaultUvSetId": "tt",
+          "uvSets": [
+            {
+              "id": "tt",
+              "label": "UV tt",
+              "directory": "/gltf/TestHigh/船体+顶棚（2048）/tt",
+              "materialNameHint": "01 - Default",
+              "materialHintSource": "runtime",
+              "textures": {
+                "ao": "/gltf/TestHigh/船体+顶棚（2048）/tt/AO.png",
+                "baseColor": "/gltf/TestHigh/船体+顶棚（2048）/tt/船体+顶棚(UV)_01 - Default_BaseColor.png",
+                "metalness": "/gltf/TestHigh/船体+顶棚（2048）/tt/船体+顶棚(UV)_01 - Default_Metallic.png",
+                "normal": "/gltf/TestHigh/船体+顶棚（2048）/tt/船体+顶棚(UV)_01 - Default_Normal.png",
+                "roughness": "/gltf/TestHigh/船体+顶棚（2048）/tt/船体+顶棚(UV)_01 - Default_Roughness.png"
+              }
+            }
+          ],
+          "runtime": {
+            "materialSlots": [
+              {
+                "name": "01 - Default",
+                "normalizedName": "01default",
+                "meshCount": 1
+              }
+            ],
+            "meshCount": 1,
+            "meshWithUvCount": 1,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": "",
+            "candidates": [
+              {
+                "fileName": "船体+顶棚(整体).fbx",
+                "format": "fbx",
+                "path": "/gltf/TestHigh/船体+顶棚(整体).fbx",
+                "score": 1109,
+                "materialSlots": [
+                  {
+                    "name": "01 - Default",
+                    "normalizedName": "01default",
+                    "meshCount": 1
+                  }
+                ],
+                "meshCount": 1,
+                "meshWithUvCount": 1,
+                "meshWithUv2Count": 0,
+                "uvCoverage": 1,
+                "uv2Coverage": 0,
+                "inspectionError": ""
+              },
+              {
+                "fileName": "船体+顶棚.glb",
+                "format": "glb",
+                "path": "/gltf/TestHigh/船体+顶棚.glb",
+                "score": 1108,
+                "materialSlots": [
+                  {
+                    "name": "M_01___Default",
+                    "normalizedName": "01default",
+                    "meshCount": 1
+                  }
+                ],
+                "meshCount": 1,
+                "meshWithUvCount": 1,
+                "meshWithUv2Count": 0,
+                "uvCoverage": 1,
+                "uv2Coverage": 0,
+                "inspectionError": ""
+              }
+            ]
+          }
+        },
+        {
+          "id": "船舱+栏杆+沙发（2048）",
+          "label": "船舱+栏杆+沙发（2048）",
+          "model": {
+            "format": "fbx",
+            "path": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/船舱+栏杆+沙发（完整）.fbx"
+          },
+          "defaultUvSetId": "tt",
+          "uvSets": [
+            {
+              "id": "tt",
+              "label": "UV tt",
+              "directory": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt",
+              "materialNameHint": "23 - Default",
+              "materialHintSource": "manual-runtime-single",
+              "textures": {
+                "baseColor": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/1_01 - Default_BaseColor.png",
+                "metalness": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/1_01 - Default_Metallic.png",
+                "normal": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/1_01 - Default_Normal.png",
+                "roughness": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/1_01 - Default_Roughness.png",
+                "ao": "/gltf/TestHigh/船舱+栏杆+沙发（2048）/tt/AO.png"
+              },
+              "renderProfile": {
+                "alphaMode": "opaque",
+                "side": "double",
+                "depthWrite": "on",
+                "depthTest": "on",
+                "renderOrder": 5
+              }
+            }
+          ],
+          "runtime": {
+            "materialSlots": [
+              {
+                "name": "23 - Default",
+                "normalizedName": "23default",
+                "meshCount": 1
+              }
+            ],
+            "meshCount": 1,
+            "meshWithUvCount": 1,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": "",
+            "candidates": [
+              {
+                "fileName": "船舱+栏杆+沙发（完整）.fbx",
+                "format": "fbx",
+                "path": "/gltf/TestHigh/船舱+栏杆+沙发（完整）.fbx",
+                "score": 1009,
+                "materialSlots": [
+                  {
+                    "name": "23 - Default",
+                    "normalizedName": "23default",
+                    "meshCount": 1
+                  }
+                ],
+                "meshCount": 1,
+                "meshWithUvCount": 1,
+                "meshWithUv2Count": 0,
+                "uvCoverage": 1,
+                "uv2Coverage": 0,
+                "inspectionError": ""
+              },
+              {
+                "fileName": "船舱+栏杆+沙发.glb",
+                "format": "glb",
+                "path": "/gltf/TestHigh/船舱+栏杆+沙发.glb",
+                "score": 8,
+                "materialSlots": [
+                  {
+                    "name": "M_23___Default",
+                    "normalizedName": "23default",
+                    "meshCount": 1
+                  }
+                ],
+                "meshCount": 1,
+                "meshWithUvCount": 0,
+                "meshWithUv2Count": 0,
+                "uvCoverage": 0,
+                "uv2Coverage": 0,
+                "inspectionError": ""
+              }
+            ]
+          }
+        },
+        {
+          "id": "马达（2048）",
+          "label": "马达（2048）",
+          "model": {
+            "format": "fbx",
+            "path": "/gltf/TestHigh/马达（2048）/马达.fbx"
+          },
+          "defaultUvSetId": "tt",
+          "uvSets": [
+            {
+              "id": "tt",
+              "label": "UV tt",
+              "directory": "/gltf/TestHigh/马达（2048）/tt",
+              "materialNameHint": "21 - Default",
+              "materialHintSource": "runtime-single",
+              "textures": {
+                "baseColor": "/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_BaseColor.png",
+                "metalness": "/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Metallic.png",
+                "normal": "/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Normal.png",
+                "roughness": "/gltf/TestHigh/马达（2048）/tt/WG_07 - Default_Roughness.png"
+              }
+            }
+          ],
+          "runtime": {
+            "materialSlots": [
+              {
+                "name": "21 - Default",
+                "normalizedName": "21default",
+                "meshCount": 1
+              }
+            ],
+            "meshCount": 1,
+            "meshWithUvCount": 1,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": "",
+            "candidates": [
+              {
+                "fileName": "马达.fbx",
+                "format": "fbx",
+                "path": "/gltf/TestHigh/马达.fbx",
+                "score": 1009,
+                "materialSlots": [
+                  {
+                    "name": "21 - Default",
+                    "normalizedName": "21default",
+                    "meshCount": 1
+                  }
+                ],
+                "meshCount": 1,
+                "meshWithUvCount": 1,
+                "meshWithUv2Count": 0,
+                "uvCoverage": 1,
+                "uv2Coverage": 0,
+                "inspectionError": ""
+              },
+              {
+                "fileName": "马达.glb",
+                "format": "glb",
+                "path": "/gltf/TestHigh/马达.glb",
+                "score": 8,
+                "materialSlots": [
+                  {
+                    "name": "M_21___Default",
+                    "normalizedName": "21default",
+                    "meshCount": 1
+                  }
+                ],
+                "meshCount": 1,
+                "meshWithUvCount": 0,
+                "meshWithUv2Count": 0,
+                "uvCoverage": 0,
+                "uv2Coverage": 0,
+                "inspectionError": ""
+              }
+            ]
+          }
+        }
+      ],
+      "runtime": {
+        "materialSlots": [
+          {
+            "name": "01 - Default",
+            "normalizedName": "01default",
+            "meshCount": 1
+          },
+          {
+            "name": "21 - Default",
+            "normalizedName": "21default",
+            "meshCount": 1
+          },
+          {
+            "name": "22 - Default",
+            "normalizedName": "22default",
+            "meshCount": 1
+          },
+          {
+            "name": "23 - Default",
+            "normalizedName": "23default",
+            "meshCount": 1
+          }
+        ],
+        "meshCount": 4,
+        "meshWithUvCount": 4,
+        "meshWithUv2Count": 0,
+        "uvCoverage": 1,
+        "uv2Coverage": 0,
+        "inspectionError": "",
+        "candidates": []
+      }
+    },
+    {
+      "id": "TwoLayerBoat",
+      "label": "TwoLayerBoat",
+      "model": {
+        "format": "glb",
+        "path": "/gltf/TwoLayerBoat/TwoLayerBoat.glb"
+      },
+      "defaultUvSetId": "1",
+      "uvSets": [
+        {
+          "id": "1",
+          "label": "UV 1",
+          "directory": "/gltf/TwoLayerBoat/1",
+          "materialNameHint": "M_01___Default",
+          "materialHintSource": "inferred",
+          "textures": {
+            "baseColor": "/gltf/TwoLayerBoat/1/1_01 - Default_BaseColor.png",
+            "emissive": "/gltf/TwoLayerBoat/1/1_01 - Default_Emissive.png",
+            "normal": "/gltf/TwoLayerBoat/1/1_01 - Default_Normal.png",
+            "ao": "/gltf/TwoLayerBoat/1/AO.png"
+          }
+        },
+        {
+          "id": "2",
+          "label": "UV 2",
+          "directory": "/gltf/TwoLayerBoat/2",
+          "materialNameHint": "M_02___Default",
+          "materialHintSource": "inferred",
+          "textures": {
+            "baseColor": "/gltf/TwoLayerBoat/2/1_02 - Default_BaseColor.png",
+            "normal": "/gltf/TwoLayerBoat/2/1_02 - Default_Normal.png",
+            "ao": "/gltf/TwoLayerBoat/2/AO_3.png"
+          }
+        }
+      ],
+      "runtime": {
+        "materialSlots": [
+          {
+            "name": "M_01___Default",
+            "normalizedName": "01default",
+            "meshCount": 4
+          },
+          {
+            "name": "M_02___Default",
+            "normalizedName": "02default",
+            "meshCount": 3
+          }
+        ],
+        "meshCount": 7,
+        "meshWithUvCount": 7,
+        "meshWithUv2Count": 0,
+        "uvCoverage": 1,
+        "uv2Coverage": 0,
+        "inspectionError": "",
+        "candidates": [
+          {
+            "fileName": "TwoLayerBoat.glb",
+            "format": "glb",
+            "path": "/gltf/TwoLayerBoat/TwoLayerBoat.glb",
+            "score": 1200,
+            "materialSlots": [
+              {
+                "name": "M_01___Default",
+                "normalizedName": "01default",
+                "meshCount": 4
+              },
+              {
+                "name": "M_02___Default",
+                "normalizedName": "02default",
+                "meshCount": 3
+              }
+            ],
+            "meshCount": 7,
+            "meshWithUvCount": 7,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          },
+          {
+            "fileName": "TwoLayerBoat.fbx",
+            "format": "fbx",
+            "path": "/gltf/TwoLayerBoat/TwoLayerBoat.fbx",
+            "score": 0,
+            "materialSlots": [],
+            "meshCount": 0,
+            "meshWithUvCount": 0,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 0,
+            "uv2Coverage": 0,
+            "inspectionError": "window is not defined"
+          }
+        ]
+      }
+    },
+    {
+      "id": "Yacht",
+      "label": "Yacht",
+      "model": {
+        "format": "fbx",
+        "path": "/gltf/Yacht/950.fbx"
+      },
+      "defaultUvSetId": "tt",
+      "uvSets": [
+        {
+          "id": "tt",
+          "label": "UV tt",
+          "directory": "/gltf/Yacht/tt",
+          "materialNameHint": "01 - Default",
+          "materialHintSource": "runtime",
+          "textures": {
+            "baseColor": "/gltf/Yacht/tt/950_01 - Default_BaseColor.png",
+            "emissive": "/gltf/Yacht/tt/950_01 - Default_Emissive.png",
+            "metalness": "/gltf/Yacht/tt/950_01 - Default_Metallic.png",
+            "normal": "/gltf/Yacht/tt/950_01 - Default_Normal.png",
+            "roughness": "/gltf/Yacht/tt/950_01 - Default_Roughness.png",
+            "ao": "/gltf/Yacht/tt/AO.png"
+          }
+        }
+      ],
+      "runtime": {
+        "materialSlots": [
+          {
+            "name": "01 - Default",
+            "normalizedName": "01default",
+            "meshCount": 8
+          }
+        ],
+        "meshCount": 8,
+        "meshWithUvCount": 8,
+        "meshWithUv2Count": 0,
+        "uvCoverage": 1,
+        "uv2Coverage": 0,
+        "inspectionError": "",
+        "candidates": [
+          {
+            "fileName": "950.fbx",
+            "format": "fbx",
+            "path": "/gltf/Yacht/950.fbx",
+            "score": 1106,
+            "materialSlots": [
+              {
+                "name": "01 - Default",
+                "normalizedName": "01default",
+                "meshCount": 8
+              }
+            ],
+            "meshCount": 8,
+            "meshWithUvCount": 8,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 1,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          },
+          {
+            "fileName": "950.glb",
+            "format": "glb",
+            "path": "/gltf/Yacht/950.glb",
+            "score": 105,
+            "materialSlots": [
+              {
+                "name": "M_01___Default",
+                "normalizedName": "01default",
+                "meshCount": 8
+              }
+            ],
+            "meshCount": 8,
+            "meshWithUvCount": 0,
+            "meshWithUv2Count": 0,
+            "uvCoverage": 0,
+            "uv2Coverage": 0,
+            "inspectionError": ""
+          }
+        ]
+      }
+    }
+  ]
+}
